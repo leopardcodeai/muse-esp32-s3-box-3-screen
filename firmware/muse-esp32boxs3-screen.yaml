@@ -797,6 +797,9 @@ globals:
 
 ota:
   - platform: esphome
+    # The id lets an overlay drop the encryption for the one bootstrap flash onto a box
+    # that runs without a key yet (docs/HOME_OVERLAY.md, "The first encrypted flash").
+    id: ota_esphome
     # Uploads use the same key as the API; a separate OTA password would cost flash.
     encryption:
       key: !secret api_encryption_key

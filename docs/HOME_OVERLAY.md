@@ -80,6 +80,21 @@ diff <(grep -E '^\s*name:' /tmp/old.yaml | sort) <(grep -E '^\s*name:' /tmp/new.
 
 An empty diff is the goal. The first overlay of this kind (the author's box, 7 October 2026) rendered 43 entity names on both sides with no difference; the only other differences were the intended ones (the project name, the version, the encryption, the paths).
 
+## The first encrypted flash
+
+A box that runs a firmware without an API key cannot offer an encrypted upload, and ESPHome refuses to send an image in plain text to it (`An OTA encryption key is configured but the device did not offer encryption`). The way through is two flashes: once without OTA encryption, then the normal file. The firmware's OTA entry carries `id: ota_esphome` for exactly this. Put a one-time file next to your overlay (the name ends in `.home.yaml`, so git ignores it):
+
+```yaml
+# muse-esp32boxs3-screen.bootstrap.home.yaml
+packages:
+  home: !include muse-esp32boxs3-screen.home.yaml
+ota:
+  - id: !extend ota_esphome
+    encryption: !remove
+```
+
+Flash it, wait until the box is back, flash your normal overlay, delete the bootstrap file. Home Assistant then asks once for the API key: Settings, Devices and services, ESPHome, re-authenticate. Copy the key without showing it: `grep '^api_encryption_key:' secrets.yaml | cut -d'"' -f2 | pbcopy`, and clear the clipboard afterwards with `pbcopy < /dev/null`. Measured on the author's box on 8 October 2026: the bootstrap upload took 99 s, the encrypted one 75 s, the log said `Noise encryption: YES`, and Home Assistant read the box again right after the key went in.
+
 ## What belongs where
 
 | Yours (overlay) | Everyone's (firmware) |
