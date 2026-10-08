@@ -20,7 +20,7 @@ then `docs/ACTIONS.md` (what the box can show) and `docs/SCENES.md` (the drawing
   `tools/make_icon_table.py`, `firmware/sounds/` by `tools/make_sounds.py`,
   `firmware/figure/` by `tools/make_placeholder_figure.py`. Edit the generator.
 - Host tests before a flash: `tools/tests/` (C++ parser tests, commands in their headers)
-  and `tools/test_render_scene.py`.
+  and `tools/test_render_scene.py`; the web app's `node --test web/test`.
 - House-specific things (names, a fixed IP, Meta's figure, optional packages) go into an
   overlay `firmware/*.home.yaml` (`docs/HOME_OVERLAY.md`), never into `muse-box.yaml`.
 - Previews in `docs/previews/` are rendered from `scenes/` by `tools/render_scene.py`;

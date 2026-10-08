@@ -1,0 +1,8 @@
+# A weather answer: icon, headline, text that fades in, an umbrella that bobs.
+bg #1e3c72 #2a5298
+icon 50 58 weather-partly-cloudy color=#ffd166
+text 92 34 "Morgen bei uns" size=m color=#cfe0ff
+text 92 56 "14° und Wolken" size=l color=white
+text 20 118 "Ab 15 Uhr kommen Schauer. Nimm einen Schirm mit." color=white w=280 lines=3 fade=600
+icon 286 204 umbrella color=#9fd3ff move=0,-6 period=2400
+seconds 25

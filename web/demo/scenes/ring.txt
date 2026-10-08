@@ -1,0 +1,31 @@
+# A tea timer: the time left inside a ring of twelve dots that light up one after
+# another (delay and fade), the next one breathing (pulse).
+bg #0f2027 #203a43
+icon 160 56 tea color=#ffd166
+text 160 112 "02:30" size=xxl color=white align=center valign=middle
+text 160 160 "Tee zieht" size=s color=#9fd3ff align=center
+# the dim ring, radius 88 around 160 112
+circle 160 24 8 #2b4a6b
+circle 204 36 8 #2b4a6b
+circle 236 68 8 #2b4a6b
+circle 248 112 8 #2b4a6b
+circle 236 156 8 #2b4a6b
+circle 204 188 8 #2b4a6b
+circle 160 200 8 #2b4a6b
+circle 116 188 8 #2b4a6b
+circle 84 156 8 #2b4a6b
+circle 72 112 8 #2b4a6b
+circle 84 68 8 #2b4a6b
+circle 116 36 8 #2b4a6b
+# the dots that are done, clockwise from the top, one every 300 ms
+circle 160 24 8 mint delay=0 fade=200
+circle 204 36 8 mint delay=300 fade=200
+circle 236 68 8 mint delay=600 fade=200
+circle 248 112 8 mint delay=900 fade=200
+circle 236 156 8 mint delay=1200 fade=200
+circle 204 188 8 mint delay=1500 fade=200
+circle 160 200 8 mint delay=1800 fade=200
+circle 116 188 8 mint delay=2100 fade=200
+circle 84 156 8 mint delay=2400 fade=200
+circle 72 112 8 mint pulse=1200 delay=2700 fade=200
+seconds 150

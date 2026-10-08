@@ -1,0 +1,11 @@
+# A menu of four buttons; a tap answers with the button's text (muse_wait_answer).
+# Light colours get ink text, dark ones white; the buttons appear one after another.
+bg #1e3c72 #2a5298
+text 160 24 "Was soll ich tun?" size=l color=white align=center
+button 20 72 130 56 "Licht an" green fade=300
+button 170 72 130 56 "Musik" purple delay=150 fade=300
+button 20 142 130 56 "Wetter" cyan delay=300 fade=300
+button 170 142 130 56 "Nichts" lightgray delay=450 fade=300
+icon 96 222 gesture-tap color=#9fd3ff move=0,-4 period=1500
+text 112 214 "Tipp auf einen Knopf" size=xs color=#c9d6ff
+seconds 60

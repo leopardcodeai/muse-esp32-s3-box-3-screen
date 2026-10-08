@@ -1,0 +1,153 @@
+/* style.css: the page around the display. The display itself is the canvas; the page
+   colour of the box (243, 243, 243) is the letterbox around it. */
+@font-face {
+  font-family: "Material Design Icons";
+  src: url("https://cdnjs.cloudflare.com/ajax/libs/MaterialDesign-Webfont/7.4.47/fonts/materialdesignicons-webfont.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --page: #f3f3f3;
+  --ink: #1c1c1e;
+  --sub: #636368;
+  --card: #ffffff;
+  --shadow: #e2e2e7;
+  --accent: #007aff;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+}
+
+#page {
+  position: absolute;
+  inset: 0 0 44px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.kiosk #page, html.pip #page { inset: 0; }
+html.kiosk #toolbar { display: none; }
+html.no-cursor, html.no-cursor * { cursor: none !important; }
+
+#stage {
+  position: relative;
+  width: 320px;
+  height: 240px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: var(--page);
+}
+html.kiosk #stage, .pip-body #stage { box-shadow: none; }
+
+#screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+#overlay .photo {
+  position: absolute;
+  object-fit: contain;
+  background: var(--page);
+}
+
+/* The video of the Float fallback: present for the browser, invisible for the person. */
+#pip-video {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#toolbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+#toolbar button, #settings button {
+  font: 600 13px/1 "Inter", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--shadow);
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+#toolbar button:hover, #settings button:hover { border-color: #c7c7cc; }
+#toolbar button:disabled { opacity: 0.4; cursor: default; }
+#settings button[type="submit"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+#notice {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  max-width: min(90vw, 560px);
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+dialog#settings {
+  border: none;
+  border-radius: 16px;
+  padding: 20px 24px;
+  width: min(92vw, 460px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+}
+dialog#settings::backdrop { background: rgba(0, 0, 0, 0.3); }
+#settings h2 { margin: 0 0 12px; font-size: 18px; }
+#settings label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0; }
+#settings label.check { font-weight: 500; }
+#settings input[type="text"], #settings input[type="url"], #settings input[type="password"] {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font: 500 14px "Inter", system-ui, sans-serif;
+  border: 1px solid var(--shadow);
+  border-radius: 8px;
+}
+#settings small { display: block; margin-top: 4px; font-weight: 500; color: var(--sub); }
+#settings code { font-size: 12px; }
+#settings menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; margin: 16px 0 0; }
+
+.pip-body { margin: 0; background: var(--page); display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+.stage-placeholder { width: 320px; height: 240px; display: flex; align-items: center; justify-content: center; color: var(--sub); font-size: 13px; }
+.stage-placeholder::after { content: "Die Anzeige schwebt in einem eigenen Fenster."; }

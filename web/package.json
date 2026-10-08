@@ -1,0 +1,13 @@
+{
+  "name": "muse-web",
+  "version": "1.0.0",
+  "description": "The Muse box's twin on a Mac: an always-on display of the assistant's cards and scenes in the browser.",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node --test test",
+    "icons": "node tools/make_icon_module.mjs",
+    "serve": "python3 -m http.server 8321"
+  }
+}

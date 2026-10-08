@@ -45,6 +45,7 @@ The whole thing is one ESPHome configuration, five C++ headers and a handful of 
 - **Queues cards.** A new card waits while another is on screen, up to twelve; a question, the doorbell and a voice conversation go first. A tap moves on, a swipe goes back, a long press clears everything.
 - **Feels the room.** The dock's 24 GHz radar reports presence (held for 30 s, the figure waves once when someone arrives), the AHT20 reports temperature and humidity, corrected for the warm board. At night with nobody there the display can go dark (a switch, off by default).
 - **Plays sound.** Voice replies, the chime, a sound when a question appears, and anything Home Assistant or Music Assistant sends to its media player, Spotify included.
+- **Runs on a Mac as well.** [`web/`](web/) is the box's twin in the browser: the same cards and scenes drawn on a 320 x 240 canvas with the same parser, fonts, timings and particles, fed by the same Home Assistant actions (it listens to the box's `call_service` events, or to a `muse_web` event of its own), installable as a Dock app in Chrome or Safari and floating above every other window as a Picture-in-Picture display. Plain ES modules without a build step; `index.html?demo=1` shows everything without Home Assistant ([web/README.md](web/README.md)).
 - **Keeps the house in the house.** Home Assistant and the box talk on the LAN over an encrypted API. Only pictures from the web, routes (OpenStreetMap) and music streams leave; nothing is sent to anyone else ([docs/PRIVACY.md](docs/PRIVACY.md)).
 
 ## The toy in pictures
@@ -369,6 +370,8 @@ muse-esp32boxs3-toy/
     packages/samsung_tv_ir.yaml   optional: a Samsung TV remote through the dock's IR
     secrets.yaml.example     copy to secrets.yaml and fill in
   homeassistant/             four example automations and a weather script
+  web/                       the display as a web app for a Mac: the same cards and scenes on a canvas, fed through
+                             Home Assistant's websocket, installable as a Dock app, demo mode, Node tests (web/README.md)
   scenes/                    scenes to send as they are, and the sources of the previews
   docs/                      actions, scenes, hardware, setup, flashing with an agent, privacy, the overlay, the diagram, previews
   tools/
@@ -384,6 +387,7 @@ muse-esp32boxs3-toy/
 ## Development
 
 - **Versions**: the newest stable ESPHome and the ESP-IDF it ships (`esp32: framework: type: esp-idf`), checked before every build, never changed in the middle of one. `min_version: 2026.9.0` is enforced in the YAML.
+- **Web app tests**: `node --test web/test` (60 tests, no dependencies); the demo is `cd web && python3 -m http.server 8321`, then `http://localhost:8321/index.html?demo=1`.
 - **Host tests**: `tools/tests/` compile with `clang++ -fsanitize=address,undefined` and run in a second; `tools/test_render_scene.py` runs with `uv run --python 3.14 --with pillow --with fonttools --with pytest -m pytest tools/ -q` (9 tests).
 - **Previews**: `uv run --python 3.14 --with pillow --with fonttools tools/render_scene.py --all scenes docs/previews --clock "2026-10-07 21:30"` rebuilds every PNG and GIF in 6 s; a fixed clock keeps the files byte-identical between runs.
 - **Before a commit**: `python3 tools/check_private.py`, then `esphome config firmware/muse-box.yaml`.

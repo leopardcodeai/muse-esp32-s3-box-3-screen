@@ -1,0 +1,10 @@
+# A face that winks (two frames) above typed text.
+bg page
+circle 160 92 56 #ffe7b3
+frame 900
+icon 160 92 emoticon-happy-outline #ff9500 size=l
+frame 250
+icon 160 92 emoticon-wink-outline #ff9500 size=l
+frame end
+text 160 170 "Bis gleich!" size=xl color=ink align=center type=80
+seconds 10

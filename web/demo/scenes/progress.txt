@@ -1,0 +1,10 @@
+# Muse waves inside a ring, two stars spin, a progress bar, bubbles rise.
+bg #101820 #24364d
+circle 160 112 86 #2b4a6b line=4 pulse=2500
+muse 160 112 wave r=78
+star 40 40 16 gold spin=5000
+star 282 200 11 #ffd166 spin=3000 rot=20
+bar 40 214 240 10 72 #34c759 bg=#2b3a4f
+text 160 228 "72 % geschafft" align=center size=xs color=#c8d3e0 valign=middle
+particles bubbles 20 color=#9fd3ff x=0 y=0 w=320 h=200 speed=0.8
+seconds 12

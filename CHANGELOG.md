@@ -7,6 +7,7 @@ The version is `esphome: project: version` in `firmware/muse-box.yaml`; the box 
 - Route maps are stitched from the 256 px tiles of a `{z}/{x}/{y}` server (substitution `map_tiles`, OpenStreetMap's own by default) over one kept TLS connection, with the attribution the tiles require on the card. Measured: 4 tiles in 1.7 to 2.1 s. Until 4.0 the map came as one picture from Wikimedia's map service, whose terms allow that for Wikimedia projects only.
 - New substitutions `doorbell_image` and `figure_prefix`; every entity and every TV button has an id, so an overlay can rename it with `!extend` (`docs/HOME_OVERLAY.md`).
 - `tools/render_scene.py`: a host renderer of the drawing language, PNG and GIF, with the placeholder figure; the previews in `docs/previews/` come from it. `tools/check_private.py` ignores git-ignored files.
+- `web/`: the display as a web app for a Mac, the box's twin: the same parser, cards, timings and particles on a canvas, fed by Home Assistant's `call_service` events or a `muse_web` event, Document Picture-in-Picture to float above other windows, a PWA manifest for the Dock, a demo mode and 60 Node tests.
 - First public release of the repository as a whole.
 - Three `-Wformat-truncation` notes from the compiler in the display lambda, older than 4.1, are gone: the timer and the info screen format into wider buffers.
 

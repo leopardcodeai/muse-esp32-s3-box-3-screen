@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Muse Web</title>
+  <meta name="description" content="The Muse box's twin on a Mac: an always-on display of the assistant's cards and scenes.">
+  <meta name="theme-color" content="#f3f3f3">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Muse">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="page">
+    <div id="stage">
+      <canvas id="screen" width="320" height="240" aria-label="Muse display"></canvas>
+      <div id="overlay"></div>
+    </div>
+  </main>
+  <video id="pip-video" playsinline muted aria-hidden="true"></video>
+  <p id="notice" hidden></p>
+  <nav id="toolbar" aria-label="Steuerung">
+    <button id="btn-float" type="button" title="Immer im Vordergrund (Bild im Bild)">Float</button>
+    <button id="btn-kiosk" type="button" title="Vollbild, Cursor aus, Bildschirm bleibt an">Kiosk</button>
+    <button id="btn-demo" type="button" title="Ohne Home Assistant: Szenen und Beispielkarten">Demo</button>
+    <button id="btn-settings" type="button" title="Home Assistant, Token, Gerät">Einstellungen</button>
+  </nav>
+  <dialog id="settings">
+    <form id="settings-form" method="dialog">
+      <h2>Einstellungen</h2>
+      <label>Home Assistant URL
+        <input name="url" type="url" placeholder="http://homeassistant.local:8123" autocomplete="off" spellcheck="false">
+      </label>
+      <label>Langlebiger Zugriffstoken
+        <input name="token" type="password" autocomplete="off" spellcheck="false">
+        <small>Bleibt im localStorage dieses Browsers auf diesem Rechner. Ein eigener Token für diese Anzeige ist klug.</small>
+      </label>
+      <label>Gerätename der Box
+        <input name="device" type="text" placeholder="muse_box" autocomplete="off" spellcheck="false">
+        <small>Der Teil vor <code>_muse_</code> in den Aktionen, zum Beispiel <code>muse_box</code> für <code>esphome.muse_box_muse_show_text</code>.</small>
+      </label>
+      <label>input_text für Antworten (optional)
+        <input name="inputText" type="text" placeholder="input_text.muse_web_answer" autocomplete="off" spellcheck="false">
+      </label>
+      <label>Name in der Leiste
+        <input name="name" type="text" placeholder="Muse" autocomplete="off">
+      </label>
+      <label class="check"><input name="integer" type="checkbox"> Nur ganzzahlig vergrößern (pixelgenau)</label>
+      <label class="check"><input name="sound" type="checkbox"> Töne (Timer, Frage)</label>
+      <menu>
+        <button type="button" id="settings-cancel">Abbrechen</button>
+        <button type="submit">Speichern</button>
+      </menu>
+    </form>
+  </dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

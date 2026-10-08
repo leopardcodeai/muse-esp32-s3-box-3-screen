@@ -1,0 +1,10 @@
+# Another assistant at the box: a Grok bot reports a build, dark theme, a bobbing icon.
+bg #0a0a0a #1c1c1c
+text 20 30 "Grok bot" size=m color=white
+text 20 56 "via REST, 23:41" size=xs color=#9a9a9a
+rect 20 84 280 2 #333333
+icon 40 126 rocket-launch color=#ffffff size=l move=0,-6 period=1800
+text 80 108 "Build 412 ist grün" size=l color=white
+text 80 138 "Tests 318, 0 rot, 4 min 12 s" size=s color=#bdbdbd
+bar 20 196 280 14 100 #ffffff bg=#2a2a2a r=7
+seconds 30

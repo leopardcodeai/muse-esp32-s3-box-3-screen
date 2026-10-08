@@ -1,0 +1,8 @@
+# Someone comes home: Muse waves, confetti, a heart over the house.
+bg #fde2e4 #fad2e1
+muse 82 120 wave r=70
+text 166 64 "Willkommen" size=l color=#5c2a3d
+text 166 98 "zuhause, Sam!" size=m color=#7a3b52 w=150
+icon 250 196 home-heart color=#e05780
+particles confetti 50 speed=0.8
+seconds 20
