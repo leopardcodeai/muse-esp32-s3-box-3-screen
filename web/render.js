@@ -20,11 +20,11 @@ export const SHADOW = [226, 226, 231];
 export const WHITE = [255, 255, 255];
 export const ORANGE = [255, 149, 0];
 
-// The Inter weights behind the six scene text sizes (xs s m l xl xxl), as muse-box.yaml lists them.
+// The Inter weights behind the six scene text sizes (xs s m l xl xxl), as muse-esp32boxs3-screen.yaml lists them.
 export const TEXT_WEIGHT = [500, 500, 700, 600, 700, 700];
 export const TEXT_PX = [13, 16, 20, 24, 36, 54];
 export const ICON_PX = [24, 46];
-// The fonts of the cards: [weight, px], the ids of muse-box.yaml.
+// The fonts of the cards: [weight, px], the ids of muse-esp32boxs3-screen.yaml.
 export const CARD_FONTS = {
   brand: [800, 19], clock: [600, 17], status: [600, 16], title: [700, 20], body: [500, 16], small: [500, 13],
   label: [600, 17], value: [700, 54], unit: [600, 24], head: [700, 36],

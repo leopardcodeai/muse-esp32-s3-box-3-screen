@@ -5,7 +5,7 @@ The version is `esphome: project: version` in `firmware/muse-esp32boxs3-screen.y
 ## 4.2.0, 8 October 2026
 
 - The project is called Muse ESP32BoxS3 Screen, and the box's default device name is `muse-esp32boxs3-screen`, so its actions are `esphome.muse_esp32boxs3_screen_muse_*` (they were `esphome.muse_box_muse_*`). The repository moved to github.com/leopardcodeai/muse-esp32boxs3-screen; the old address redirects. The firmware file is `firmware/muse-esp32boxs3-screen.yaml`, the command line `tools/muse_screen.py`. Home Assistant keeps every entity of a renamed device: their unique ids come from the MAC and the entity name, not the device name. It does keep the old action names until the device's entry is reloaded once.
-- The web version is called Muse Web Screen.
+- The web version is called Muse Web Screen and runs at https://muse-web-screen.vercel.app (demo without setup). New on the web: a frame rate setting (60, 30, or 10 like the box for a side-by-side test), drawing at the screen's pixel ratio, a figure source that can load your own frames from a local folder at run time (never deployed), and a note when an https page is pointed at an http Home Assistant. 83 Node tests.
 
 ## 4.1.0, 7 October 2026
 

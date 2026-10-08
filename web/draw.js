@@ -1,5 +1,7 @@
 // draw.js: draws a parsed scene on the canvas the way draw_scene in firmware/muse.h
-// draws it on the box, ten times a second.
+// draws it on the box. The box draws ten times a second; this draws at the frame rate of
+// the settings (10, 30 or 60), always from the scene's time in ms, so a scene keeps its
+// timing and only gets smoother.
 //
 // The compositing model is the box's, not an image editor's: a translucent element is
 // painted in its colour mixed with what scene.under() finds below it, and under() knows

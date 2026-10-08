@@ -1,13 +1,14 @@
 {
-  "name": "muse-web",
-  "version": "1.0.0",
-  "description": "The Muse box's twin on a Mac: an always-on display of the assistant's cards and scenes in the browser.",
+  "name": "muse-web-screen",
+  "version": "1.1.0",
+  "description": "Muse Web Screen: the twin of the Muse ESP32BoxS3 Screen in the browser, an always-on display of the assistant's cards and scenes.",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
   "scripts": {
     "test": "node --test test",
     "icons": "node tools/make_icon_module.mjs",
-    "serve": "python3 -m http.server 8321"
+    "serve": "python3 -m http.server 8321",
+    "frames": "python3 tools/serve_frames.py"
   }
 }

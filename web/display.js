@@ -15,7 +15,7 @@ import * as S from "./scene.js";
 import { drawTopBar, drawCard } from "./cards.js";
 import { SceneDrawer } from "./draw.js";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 
 export class Display {
   constructor(opts) {
@@ -324,7 +324,7 @@ export class Display {
   // The display about itself (a tap on the top bar), for 15 s.
   info() {
     if (this.mode === 12) return;
-    this.queue.enqueue(makeCard({ mode: 12, title: "Muse Web", ms: 15000 }), NOW);
+    this.queue.enqueue(makeCard({ mode: 12, title: "Muse Web Screen", ms: 15000 }), NOW);
     this.next();
   }
 
@@ -359,8 +359,9 @@ export class Display {
 
   // ----------------------------------------------------------------- time --
 
-  // Called ten times a second before drawing: cards that had their time give way,
-  // timers count, the greeting and an error end.
+  // Called before every picture (10 to 60 a second, the frame rate setting): cards that
+  // had their time give way, timers count, the greeting and an error end. Everything
+  // here goes by the clock, so the rate changes nothing but the smoothness.
   tick() {
     const now = this.now();
     if (this.mode !== 0 && now > this.until) {

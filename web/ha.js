@@ -15,6 +15,19 @@
 //  * A service call that fails (the box is off) still produces the call_service event;
 //    that is on purpose: the Mac shows the card even when the box does not.
 //  * Reconnects back off from 1 s to 30 s; `onState` reports off, connecting, on.
+//  * From a page served over HTTPS a ws:// URL is mixed content. Chrome and Edge 147 and
+//    later let it through to a private IP or a .local name once the person allows
+//    local network access, and Chrome 154 and later also to a name that resolves into
+//    the local network when the socket says so (`targetAddressSpace: "local"`, the
+//    second argument). An older browser reads that argument as a subprotocol and throws
+//    a SyntaxError; the socket is then opened the old way. Safari and Firefox refuse
+//    ws:// from HTTPS in any case (web/README.md, "Connecting from the hosted page").
+//
+// DEFAULT_DEVICE is the one place of the box's device name in this app: the part before
+// "_muse_" in its actions (esphome.muse_esp32boxs3_screen_muse_show_text), the ESPHome
+// name muse-esp32boxs3-screen with "_" for "-". The settings, the dialog's placeholder
+// and the tests take it from here.
+export const DEFAULT_DEVICE = "muse_esp32boxs3_screen";
 export const EVENT_WEB = "muse_web";
 export const EVENT_ANSWER = "muse_web_answer";
 
@@ -28,7 +41,7 @@ export function websocketUrl(base) {
 
 // A call_service event's data to {action, fields}, or null when it is not for the
 // box: domain esphome, service "<device>_muse_<action>", service_data the fields.
-export function mapCallService(data, device = "muse_box") {
+export function mapCallService(data, device = DEFAULT_DEVICE) {
   if (!data || data.domain !== "esphome" || typeof data.service !== "string") return null;
   const prefix = `${device}_muse_`;
   if (!data.service.startsWith(prefix)) return null;
@@ -46,8 +59,21 @@ export function mapMuseWeb(data) {
   return { action: action.replace(/^muse_/, ""), fields };
 }
 
+// The options of the WebSocket constructor for `url` from a page loaded with
+// `pageProtocol`: {targetAddressSpace: "local"} when an https page opens ws:// to a host
+// name that is no IP literal, no .local name and not this machine (those need no hint),
+// else null.
+export function socketOptions(url, pageProtocol) {
+  const m = String(url || "").match(/^ws:\/\/(\[[^\]]*\]|[^/:?#]+)/i);
+  if (pageProtocol !== "https:" || !m) return null;
+  const host = m[1].toLowerCase();
+  const literal = /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.startsWith("[");
+  const local = host.endsWith(".local") || host === "localhost" || host.endsWith(".localhost");
+  return literal || local ? null : { targetAddressSpace: "local" };
+}
+
 // One websocket message of Home Assistant to the action it carries, or null.
-export function mapMessage(msg, device = "muse_box") {
+export function mapMessage(msg, device = DEFAULT_DEVICE) {
   if (!msg || msg.type !== "event" || !msg.event) return null;
   if (msg.event.event_type === "call_service") return mapCallService(msg.event.data, device);
   if (msg.event.event_type === EVENT_WEB) return mapMuseWeb(msg.event.data);
@@ -58,7 +84,8 @@ export class HaClient {
   constructor(opts) {
     this.url = opts.url;
     this.token = opts.token;
-    this.device = opts.device || "muse_box";
+    this.device = opts.device || DEFAULT_DEVICE;
+    this.pageProtocol = opts.pageProtocol || ""; // location.protocol of the page
     this.onAction = opts.onAction || (() => {}); // ({action, fields})
     this.onState = opts.onState || (() => {}); // ("off" | "connecting" | "on", detail)
     this.log = opts.log || (() => {});
@@ -90,7 +117,13 @@ export class HaClient {
     this.authenticated = false;
     let ws;
     try {
-      ws = new this.WebSocketImpl(url);
+      const options = socketOptions(url, this.pageProtocol);
+      try {
+        ws = options ? new this.WebSocketImpl(url, options) : new this.WebSocketImpl(url);
+      } catch (e) {
+        if (!options || e.name !== "SyntaxError") throw e;
+        ws = new this.WebSocketImpl(url); // a browser without WebSocketInit
+      }
     } catch (e) {
       this.onState("off", String(e));
       this.scheduleRetry();

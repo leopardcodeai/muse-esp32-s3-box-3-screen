@@ -3,6 +3,8 @@
 
 # Muse ESP32BoxS3 Screen
 
+> **Try it in the browser:** [muse-web-screen.vercel.app](https://muse-web-screen.vercel.app), the same cards and scenes as the box, in demo mode or connected to your Home Assistant.
+>
 > **Read the story behind it:** [An always-on AI agent needs a body in the house](https://blog.leopardcode.ai/en/esp32-box-as-the-body-of-an-always-on-agent/) (English) · [Ein KI-Agent, der immer da ist, braucht einen Körper im Haus](https://blog.leopardcode.ai/de/esp32-box-as-the-body-of-an-always-on-agent/) (Deutsch), on blog.leopardcode.ai.
 
 One assistant, many hands. An Espressif ESP32-S3-BOX-3 (a 2.4 inch touch screen, two microphones, a speaker, and a dock with radar, climate sensor and battery) becomes the face, voice and ears of an AI assistant in the house. The assistant draws the screen itself in a small drawing language, asks back with buttons, counts timers, shows routes on OpenStreetMap, GIFs, photos and live cameras, hears its wake word on the device and talks through Home Assistant's voice pipeline. Built with ESPHome and Home Assistant, driven by Meta's Muse, by Claude, or by any agent that can call an API.
@@ -47,7 +49,7 @@ The whole thing is one ESPHome configuration, five C++ headers and a handful of 
 - **Queues cards.** A new card waits while another is on screen, up to twelve; a question, the doorbell and a voice conversation go first. A tap moves on, a swipe goes back, a long press clears everything.
 - **Feels the room.** The dock's 24 GHz radar reports presence (held for 30 s, the figure waves once when someone arrives), the AHT20 reports temperature and humidity, corrected for the warm board. At night with nobody there the display can go dark (a switch, off by default).
 - **Plays sound.** Voice replies, the chime, a sound when a question appears, and anything Home Assistant or Music Assistant sends to its media player, Spotify included.
-- **Runs on a Mac as well.** [`web/`](web/) is the box's twin in the browser: the same cards and scenes drawn on a 320 x 240 canvas with the same parser, fonts, timings and particles, fed by the same Home Assistant actions (it listens to the box's `call_service` events, or to a `muse_web` event of its own), installable as a Dock app in Chrome or Safari and floating above every other window as a Picture-in-Picture display. Plain ES modules without a build step; `index.html?demo=1` shows everything without Home Assistant ([web/README.md](web/README.md)).
+- **Runs on a Mac as well.** Muse Web Screen, live at [muse-web-screen.vercel.app](https://muse-web-screen.vercel.app) (a demo opens without any setup), is the box's twin in the browser ([`web/`](web/)): the same cards and scenes drawn on a 320 x 240 canvas with the same parser, fonts, timings and particles, fed by the same Home Assistant actions (it listens to the box's `call_service` events, or to a `muse_web` event of its own), installable as a Dock app in Chrome or Safari and floating above every other window as a Picture-in-Picture display. Plain ES modules without a build step; `index.html?demo=1` shows everything without Home Assistant ([web/README.md](web/README.md)).
 - **Keeps the house in the house.** Home Assistant and the box talk on the LAN over an encrypted API. Only pictures from the web, routes (OpenStreetMap) and music streams leave; nothing is sent to anyone else ([docs/PRIVACY.md](docs/PRIVACY.md)).
 
 ## The screen in pictures

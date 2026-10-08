@@ -1,5 +1,5 @@
 // queue.js: cards wait in line, as on the box (a port of the queue half of
-// firmware/muse.h and of the scripts muse_next and muse_prev in muse-box.yaml).
+// firmware/muse.h and of the scripts muse_next and muse_prev in muse-esp32boxs3-screen.yaml).
 //
 // A new card waits while another is on screen, up to QUEUE_MAX; a tap shows the next.
 // Some go first: a question, the doorbell, a voice conversation. A card with the title

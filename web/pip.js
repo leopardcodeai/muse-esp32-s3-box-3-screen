@@ -18,20 +18,31 @@
 // Returns the window.
 export async function floatDocument(stage, { width, height, fonts = [], onMove, onClose }) {
   const pip = await window.documentPictureInPicture.requestWindow({ width, height });
-  // A one-time copy of the page's style sheets, the way Chrome's own sample does it.
+  // The page's style sheets, linked again (not copied into <style>, which the hosted
+  // page's Content-Security-Policy refuses; the new window inherits that policy). The
+  // fonts load only once the sheets that declare them are in.
+  const loaded = [];
   for (const sheet of document.styleSheets) {
-    try {
-      const css = [...sheet.cssRules].map((r) => r.cssText).join("\n");
-      const style = pip.document.createElement("style");
-      style.textContent = css;
-      pip.document.head.appendChild(style);
-    } catch {
+    if (sheet.href) {
       const link = pip.document.createElement("link");
       link.rel = "stylesheet";
       link.href = sheet.href;
+      loaded.push(new Promise((done) => {
+        link.addEventListener("load", done, { once: true });
+        link.addEventListener("error", done, { once: true });
+      }));
       pip.document.head.appendChild(link);
+      continue;
+    }
+    try {
+      const style = pip.document.createElement("style");
+      style.textContent = [...sheet.cssRules].map((r) => r.cssText).join("\n");
+      pip.document.head.appendChild(style);
+    } catch {
+      // an inline sheet that cannot be read stays behind
     }
   }
+  await Promise.all(loaded);
   await Promise.all(fonts.map((f) => pip.document.fonts.load(f).catch(() => null)));
   pip.document.documentElement.classList.add("pip");
   pip.document.body.classList.add("pip-body");
@@ -58,10 +69,12 @@ export function hasVideoPip(video) {
     || typeof video.webkitSetPresentationMode === "function";
 }
 
-// The fallback: the canvas as a video in the browser's own Picture-in-Picture window.
-export async function floatVideo(canvas, video, onClose) {
-  if (!video.srcObject) {
-    video.srcObject = canvas.captureStream(10);
+// The fallback: the canvas as a video in the browser's own Picture-in-Picture window,
+// at the display's frame rate.
+export async function floatVideo(canvas, video, onClose, fps = 10) {
+  if (!video.srcObject || video.dataset.fps !== String(fps)) {
+    video.srcObject = canvas.captureStream(fps);
+    video.dataset.fps = String(fps);
     video.muted = true;
     video.playsInline = true;
   }

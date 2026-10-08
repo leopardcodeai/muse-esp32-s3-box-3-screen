@@ -129,13 +129,15 @@ dialog#settings {
   border-radius: 16px;
   padding: 20px 24px;
   width: min(92vw, 460px);
+  max-height: 92vh;
+  overflow: auto;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
 }
 dialog#settings::backdrop { background: rgba(0, 0, 0, 0.3); }
 #settings h2 { margin: 0 0 12px; font-size: 18px; }
 #settings label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0; }
 #settings label.check { font-weight: 500; }
-#settings input[type="text"], #settings input[type="url"], #settings input[type="password"] {
+#settings input[type="text"], #settings input[type="url"], #settings input[type="password"], #settings select {
   display: block;
   width: 100%;
   margin-top: 4px;
@@ -144,7 +146,11 @@ dialog#settings::backdrop { background: rgba(0, 0, 0, 0.3); }
   border: 1px solid var(--shadow);
   border-radius: 8px;
 }
+#settings select { background: var(--card); color: var(--ink); }
 #settings small { display: block; margin-top: 4px; font-weight: 500; color: var(--sub); }
+#settings small.warn { color: #b25000; }
+#settings [hidden] { display: none; }
+#figure-status { color: var(--ink); }
 #settings code { font-size: 12px; }
 #settings menu { display: flex; gap: 8px; justify-content: flex-end; padding: 0; margin: 16px 0 0; }
 

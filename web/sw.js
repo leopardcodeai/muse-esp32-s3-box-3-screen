@@ -5,13 +5,16 @@
 //
 // Shell files come from the network when it answers and from the cache when it does
 // not, so an edited file reaches an installed app on the next start and the app still
-// opens without the server. Bump VERSION to drop files that no longer exist.
-const VERSION = "muse-web-1.0.0";
+// opens without the server. Bump VERSION to drop files that no longer exist. The hosted
+// page serves this file with Cache-Control: no-cache (vercel.json), so a new version is
+// seen on the next visit. The owner's figure frames are never cached here: they come
+// from another origin, which this worker leaves alone.
+const VERSION = "muse-web-screen-1.1.0";
 const SHELL = [
   "./", "./index.html", "./style.css", "./manifest.webmanifest",
   "./app.js", "./display.js", "./cards.js", "./draw.js", "./render.js", "./figure.js", "./scene.js", "./icons.js",
   "./particles.js", "./text.js", "./tables.js", "./queue.js", "./timers.js", "./weather.js", "./media.js",
-  "./audio.js", "./ha.js", "./pip.js", "./demo.js",
+  "./audio.js", "./ha.js", "./pip.js", "./demo.js", "./settings.js", "./pace.js", "./apng.js", "./figure_frames.js",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png",
 ];
 

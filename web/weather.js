@@ -11,8 +11,7 @@
 //  * The SVGs carry a viewBox but no width or height, so a browser reports no natural
 //    size for them. Each one is drawn once into a 1024 px canvas and cropped from
 //    there, which works the same in every browser.
-//  * An icon that is still loading is left out of the picture; the next refresh, 100 ms
-//    later, draws it.
+//  * An icon that is still loading is left out of the picture; the next picture draws it.
 import { WEATHER } from "./text.js";
 
 export const METEOCONS_VERSION = "2.0.0";

@@ -1,0 +1,10 @@
+# The Vercel CLI's link to the project (vercel link writes it).
+.vercel/
+# A local folder of figure frames: Meta's Muse artwork may never be committed.
+local/
+figure/
+frames/
+muse_*.png
+*.apng
+# Files the Vercel CLI may write (vercel link pulls a short-lived OIDC token into .env.local).
+.env*

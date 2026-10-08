@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Muse Web</title>
-  <meta name="description" content="The Muse box's twin on a Mac: an always-on display of the assistant's cards and scenes.">
+  <title>Muse Web Screen</title>
+  <meta name="description" content="Muse Web Screen: the twin of the Muse ESP32BoxS3 Screen in the browser, an always-on display of the assistant's cards and scenes.">
   <meta name="theme-color" content="#f3f3f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Muse">
+  <meta name="apple-mobile-web-app-title" content="Muse Screen">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -38,20 +38,39 @@
       <h2>Einstellungen</h2>
       <label>Home Assistant URL
         <input name="url" type="url" placeholder="http://homeassistant.local:8123" autocomplete="off" spellcheck="false">
+        <small id="mixed-note" class="warn" hidden></small>
       </label>
       <label>Langlebiger Zugriffstoken
         <input name="token" type="password" autocomplete="off" spellcheck="false">
         <small>Bleibt im localStorage dieses Browsers auf diesem Rechner. Ein eigener Token für diese Anzeige ist klug.</small>
       </label>
       <label>Gerätename der Box
-        <input name="device" type="text" placeholder="muse_box" autocomplete="off" spellcheck="false">
-        <small>Der Teil vor <code>_muse_</code> in den Aktionen, zum Beispiel <code>muse_box</code> für <code>esphome.muse_box_muse_show_text</code>.</small>
+        <input name="device" type="text" autocomplete="off" spellcheck="false">
+        <small>Der Teil vor <code>_muse_</code> in den Aktionen, zum Beispiel <code id="device-example"></code> für <code id="device-action"></code>.</small>
       </label>
       <label>input_text für Antworten (optional)
         <input name="inputText" type="text" placeholder="input_text.muse_web_answer" autocomplete="off" spellcheck="false">
       </label>
       <label>Name in der Leiste
         <input name="name" type="text" placeholder="Muse" autocomplete="off">
+      </label>
+      <label>Bildrate
+        <select name="fps">
+          <option value="60">60 Bilder/s, flüssig (Standard)</option>
+          <option value="30">30 Bilder/s</option>
+          <option value="10">10 Bilder/s, genau wie die Box (für den Vergleich)</option>
+        </select>
+        <small>Szenen behalten ihre Zeiten in Millisekunden: sie sehen aus wie auf der Box, nur flüssiger.</small>
+      </label>
+      <label>Figur-Quelle
+        <select name="figureSource">
+          <option value="placeholder">Platzhalter (Standard)</option>
+          <option value="url">Eigene Bilder aus einem Ordner</option>
+        </select>
+      </label>
+      <label id="figure-url-row" hidden>Ordner-URL der Bilder
+        <input name="figureUrl" type="url" placeholder="http://127.0.0.1:8322" autocomplete="off" spellcheck="false">
+        <small>Lädt <code>muse_idle.png</code>, <code>muse_wave.png</code>, <code>muse_working.png</code>, <code>muse_making.png</code>, <code>muse_confetti.png</code> und <code>muse_avatar.png</code> aus diesem Ordner, nur in diesem Browser; der Server dieser Seite bekommt nichts davon. <span id="figure-status"></span></small>
       </label>
       <label class="check"><input name="integer" type="checkbox"> Nur ganzzahlig vergrößern (pixelgenau)</label>
       <label class="check"><input name="sound" type="checkbox"> Töne (Timer, Frage)</label>

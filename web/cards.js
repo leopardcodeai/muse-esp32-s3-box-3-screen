@@ -1,5 +1,5 @@
 // cards.js: the cards the box shows, drawn as its display lambda draws them
-// (firmware/muse-box.yaml, display:): the top bar, the status with the figure and the
+// (firmware/muse-esp32boxs3-screen.yaml, display:): the top bar, the status with the figure and the
 // pill, text, value, celebration, weather, photo, event, route, agenda, question, timer,
 // info and list. Same positions, fonts and colours; the texts stay German like the box's.
 //
@@ -12,6 +12,7 @@ import { particles } from "./particles.js";
 import { cardFont, iconFont, PAGE, INK, SUB, CARD, TXT, SHADOW, WHITE, ORANGE } from "./render.js";
 import { Item, mix } from "./scene.js";
 import { PHOTO_W, PHOTO_H, PHOTO_TOP } from "./media.js";
+import { CARD_STEP_MS } from "./figure.js";
 
 const BG = PAGE;
 const RED = [255, 59, 48];
@@ -66,7 +67,7 @@ export function drawStatus(r, d, now) {
   }
   const cuddle = d.cuddleUntil - now;
   const wiggle = cuddle > 0 ? Math.round(4 * Math.sin(now / 70)) : 0;
-  d.figure.draw(r, anim, now - d.animSince, 80 + wiggle, 30);
+  d.figure.draw(r, anim, now - d.animSince, 80 + wiggle, 30, CARD_STEP_MS);
   if (cuddle > 0) {
     // Cuddled: hearts rise for 2.6 s, drawn like a particles element of a scene.
     const hearts = new Item("particles");
@@ -128,10 +129,10 @@ export function drawValue(r, d) {
   d.figure.draw(r, "avatar", 0, 124, 150);
 }
 
-// Confetti plays once, then holds its last frame.
+// Confetti plays once, then holds its last frame (a step per 200 ms, like the box).
 export function drawCelebration(r, d, now) {
   const c = d.card;
-  d.figure.draw(r, "confetti", now - d.since, 80, 22);
+  d.figure.draw(r, "confetti", now - d.since, 80, 22, CARD_STEP_MS);
   r.print(160, 186, cardFont("title"), INK, "TC", c.title);
   const body = wrap(c.body, r.widthOf(cardFont("body")), 290);
   if (body.length) r.print(160, 212, cardFont("body"), SUB, "TC", body[0]);
@@ -305,7 +306,7 @@ export function drawTimer(r, d, now) {
 
 // The display about itself (a tap on the top bar): connection, host, uptime, cards.
 export function drawInfo(r, d, now) {
-  r.print(160, 36, cardFont("title"), INK, "TC", `Muse Web ${d.version_string}`);
+  r.print(160, 36, cardFont("title"), INK, "TC", `Muse Web Screen ${d.version_string}`);
   const up = Math.floor(now / 1000);
   const lines = [
     d.connection === "on" ? "verbunden" : d.connection === "connecting" ? "verbindet …" : d.connection === "demo" ? "Demo" : "getrennt",

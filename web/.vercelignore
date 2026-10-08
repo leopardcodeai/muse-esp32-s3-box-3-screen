@@ -1,0 +1,19 @@
+# What goes to Vercel: the app shell and nothing else. Everything is left out first and
+# only the files the page loads come back, so a file dropped into web/ by accident (a
+# local figure folder, Meta's Muse artwork, a note with an address) never gets deployed.
+/*
+!/index.html
+!/*.js
+!/style.css
+!/manifest.webmanifest
+!/vercel.json
+!icons
+!demo
+
+# Never, wherever it sits: the owner's figure frames and any local frame folder.
+muse_*.png
+*.apng
+local/
+figure/
+frames/
+.DS_Store
