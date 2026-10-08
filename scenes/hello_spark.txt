@@ -1,0 +1,10 @@
+# Another assistant at the box: Spark celebrates a sold item, confetti and a spinning star.
+bg #2b0b3a #7a1f6e
+star 262 56 22 #ffd166 spin=4000
+star 40 190 12 #ff8fab spin=5000
+text 24 40 "Spark" size=m color=#ffd166
+text 24 66 "Verkauft!" size=xxl color=white type=80
+text 24 136 "Kamera, 85 Euro, Abholung Samstag." size=s color=#f1d9ff w=272 lines=2 fade=600 delay=900
+icon 280 196 party-popper color=#ffd166 size=l move=0,-8 period=2200
+particles confetti 60 speed=0.7
+seconds 30

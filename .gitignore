@@ -1,0 +1,11 @@
+firmware/secrets.yaml
+firmware/.esphome/
+firmware/.cache/
+.cache/
+__pycache__/
+*.pyc
+.DS_Store
+# Meta's Muse artwork, if tools/make_muse_assets.py was run: never commit it
+firmware/figure/muse_*.png
+# A private overlay linked in from elsewhere (docs/HOME_OVERLAY.md)
+firmware/*.home.yaml

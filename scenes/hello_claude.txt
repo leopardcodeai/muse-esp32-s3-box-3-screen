@@ -1,0 +1,11 @@
+# Another assistant at the box: Claude asks before it changes the thermostat.
+bg #f6efe4 #ead9c2
+circle 48 52 24 #d97757
+text 48 52 "C" size=l color=white align=center valign=middle
+text 86 36 "Claude" size=m color=#4a3425
+text 86 62 "über Home Assistant" size=xs color=#8a6d55
+text 20 96 "Soll ich die Heizung im Büro auf 21 Grad stellen?" size=s color=#2b1d14 w=280 lines=2 fade=400
+button 20 164 136 44 "Ja, bitte" color=#d97757
+button 164 164 136 44 "Später" color=#d9cbb8
+particles sparkle 8 #d97757 x=200 y=0 w=120 h=80
+seconds 60

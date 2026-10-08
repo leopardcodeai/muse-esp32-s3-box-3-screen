@@ -1,0 +1,25 @@
+# Doorbell: the card at once, the door photo as soon as another automation has saved it
+# to /config/www/doorbell_latest.jpg. Adjust the three entity ids; the box name is the
+# device name with underscores (muse_box for "muse-box").
+alias: "Muse Box: doorbell"
+mode: restart
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.doorbell_pressed
+    to: "on"
+actions:
+  - action: esphome.muse_box_muse_show_event
+    continue_on_error: true
+    data:
+      icon: klingel
+      title: "Es klingelt"
+      message: "Haustür, {{ now().strftime('%H:%M') }}"
+  - delay:
+      seconds: 3
+  - action: esphome.muse_box_muse_show_image
+    continue_on_error: true
+    data:
+      title: "Es klingelt"
+      message: "Haustür, {{ now().strftime('%H:%M') }}"
+      # a timestamp defeats caches; the same title replaces the event card at once
+      url: "http://homeassistant.local:8123/local/doorbell_latest.jpg?t={{ as_timestamp(now()) | int }}"

@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  System diagram of Muse ESP32BoxS3 Toy. Hand-written, self-contained SVG.
+  Palette and measures: LeopardCode.AI design system (company-brain/DESIGN.md,
+  tools/design_agent/tokens.css, light scheme). Typeface: Helvetica Neue first,
+  because cairosvg uses the first family in the list and the Mac has it; the
+  rest is the usual system sans fallback. All strokes 2 px. No emojis, no dashes.
+  Re-render the PNG: see README.md in this folder.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-labelledby="t d">
+  <title id="t">Muse ESP32BoxS3 Toy: one assistant, many hands</title>
+  <desc id="d">Muse in Meta's datacenter talks to the Muse apps and to Home Assistant on a Raspberry Pi 5. Home Assistant drives the ESP32-S3-BOX-3 over the encrypted ESPHome API on the home network; the box listens, shows cards and speaks. House devices trigger cards through Home Assistant; the box fetches maps, pictures and music streams from open data on the internet.</desc>
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+    .h1 { font-size: 34px; font-weight: 600; fill: #16181d; }
+    .h1sub { font-size: 16px; fill: #63697a; }
+    .ptitle { font-size: 18px; font-weight: 600; fill: #16181d; }
+    .psub { font-size: 13px; fill: #63697a; }
+    .ctitle { font-size: 13.5px; font-weight: 600; fill: #16181d; }
+    .stitle { font-size: 15px; font-weight: 600; fill: #16181d; }
+    .body { font-size: 12.5px; fill: #3d424b; }
+    .body13 { font-size: 13px; fill: #3d424b; }
+    .meta { font-size: 12.5px; fill: #63697a; }
+    .small { font-size: 12px; fill: #3d424b; }
+    .eyebrow { font-size: 11px; font-weight: 600; fill: #63697a; }
+    .lab-lan { font-size: 12.5px; font-weight: 600; fill: #0066cc; }
+    .lab-net { font-size: 12.5px; font-weight: 600; fill: #8a5d00; }
+    .foot { font-size: 12px; fill: #8b91a0; }
+    .mark { font-size: 13px; font-weight: 600; fill: #16181d; }
+    .panel { fill: #f4f5f7; stroke: #d3d6dc; stroke-width: 2; }
+    .card { fill: #ffffff; stroke: #d3d6dc; stroke-width: 2; }
+    .dev { fill: #ffffff; stroke: #3d424b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .devline { fill: none; stroke: #3d424b; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .devfill { fill: #3d424b; }
+    .screen { fill: #f1f2f4; }
+    .bubble { fill: #e3e5e9; }
+    .bubble-on { fill: #0066cc; fill-opacity: 0.16; }
+    .lan { fill: none; stroke: #0066cc; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .net { fill: none; stroke: #8a5d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 7 6; }
+    .nethead { fill: none; stroke: #8a5d00; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .wall { fill: none; stroke: #8b91a0; stroke-width: 2; stroke-dasharray: 12 8; }
+    .halo { fill: #ffffff; }
+  </style>
+
+  <!-- the sheet -->
+  <rect x="0" y="0" width="1600" height="900" fill="#ffffff"/>
+
+  <!-- ============ header ============ -->
+  <text class="h1" x="48" y="60" letter-spacing="-0.7">Muse ESP32BoxS3 Toy: one assistant, many hands</text>
+  <text class="h1sub" x="48" y="92">Muse thinks in Meta's cloud; Home Assistant and an ESP32-S3-BOX-3 give it a screen, a voice, ears and sensors in the house</text>
+
+  <!-- legend: the two kinds of arrows -->
+  <path class="lan" d="M1330 54 H1378"/>
+  <path class="lan" d="M1371 48 L1380 54 L1371 60"/>
+  <text class="body13" x="1392" y="58">data stays in the house</text>
+  <path class="net" d="M1330 80 H1378"/>
+  <path class="nethead" d="M1371 74 L1380 80 L1371 86"/>
+  <text class="body13" x="1392" y="84">data crosses the internet</text>
+
+  <!-- ============ home network boundary ============ -->
+  <rect class="wall" x="490" y="140" width="768" height="712" rx="24"/>
+  <text class="eyebrow" x="520" y="172" letter-spacing="0.77">HOME NETWORK</text>
+  <text class="meta" x="640" y="172">everything between Home Assistant and the box stays in the house</text>
+
+  <!-- ============ 1. Meta datacenter ============ -->
+  <rect class="panel" x="48" y="200" width="300" height="230" rx="16"/>
+  <text class="ptitle" x="68" y="232">Meta datacenter</text>
+  <text class="psub" x="68" y="254">the assistant runs here</text>
+  <g transform="translate(78 276)">
+    <path class="dev" d="M44 108 C16 108 4 84 20 66 C2 44 24 26 46 36 C50 10 86 2 108 22 C126 0 164 6 172 34 C202 26 228 52 214 76 C236 94 218 112 190 108 Z"/>
+  </g>
+  <text class="stitle" x="198" y="330" text-anchor="middle">Muse (Meta)</text>
+  <text class="meta" x="198" y="350" text-anchor="middle">reasons, plans, remembers</text>
+
+  <!-- Muse app <-> Muse cloud -->
+  <path class="net" d="M100 436 V494"/>
+  <path class="nethead" d="M94 442 L100 433 L106 442"/>
+  <path class="nethead" d="M94 488 L100 497 L106 488"/>
+  <text class="body" x="116" y="469">questions, answers, voice</text>
+
+  <!-- ============ 2. Muse apps ============ -->
+  <rect class="panel" x="48" y="500" width="300" height="330" rx="16"/>
+  <text class="ptitle" x="68" y="532">Muse apps</text>
+  <text class="psub" x="68" y="554">the Muse app on iPhone and MacBook</text>
+  <!-- MacBook -->
+  <rect class="dev" x="78" y="596" width="170" height="108" rx="8"/>
+  <rect class="screen" x="88" y="606" width="150" height="88" rx="3"/>
+  <rect class="bubble" x="98" y="620" width="64" height="16" rx="8"/>
+  <rect class="bubble-on" x="136" y="646" width="92" height="16" rx="8"/>
+  <rect class="bubble" x="98" y="672" width="50" height="12" rx="6"/>
+  <rect class="dev" x="58" y="705" width="210" height="10" rx="5"/>
+  <text class="meta" x="163" y="738" text-anchor="middle">MacBook</text>
+  <!-- iPhone -->
+  <rect class="dev" x="274" y="600" width="54" height="112" rx="10"/>
+  <rect class="screen" x="280" y="612" width="42" height="84" rx="3"/>
+  <rect class="bubble" x="285" y="624" width="24" height="10" rx="5"/>
+  <rect class="bubble-on" x="297" y="640" width="20" height="10" rx="5"/>
+  <rect class="bubble" x="285" y="656" width="28" height="10" rx="5"/>
+  <path class="devline" d="M291 704 H311"/>
+  <text class="meta" x="301" y="738" text-anchor="middle">iPhone</text>
+  <text class="body13" x="198" y="774" text-anchor="middle">chat, voice, e-mail, calendar</text>
+  <text class="meta" x="198" y="794" text-anchor="middle">the same Muse on every device</text>
+
+  <!-- Muse cloud -> Home Assistant API -->
+  <rect class="halo" x="356" y="252" width="154" height="38"/>
+  <rect class="halo" x="356" y="308" width="154" height="38"/>
+  <path class="net" d="M350 301 H516"/>
+  <path class="nethead" d="M509 295 L518 301 L509 307"/>
+  <text class="lab-net" x="433" y="265" text-anchor="middle">Home Assistant API</text>
+  <text class="body" x="433" y="283" text-anchor="middle">with a long-lived token</text>
+  <text class="body" x="433" y="321" text-anchor="middle">actions: show text, ask,</text>
+  <text class="body" x="433" y="337" text-anchor="middle">draw a scene, timer, route</text>
+
+  <!-- ============ 3. Home Assistant ============ -->
+  <rect class="panel" x="518" y="200" width="280" height="440" rx="16"/>
+  <text class="ptitle" x="538" y="232">Home Assistant</text>
+  <text class="psub" x="538" y="254">the hub, on a Raspberry Pi 5</text>
+  <!-- the Pi -->
+  <rect class="dev" x="732" y="214" width="44" height="28" rx="3"/>
+  <rect class="devfill" x="745" y="221" width="12" height="12" rx="2"/>
+  <rect class="devfill" x="766" y="218" width="6" height="7"/>
+  <rect class="devfill" x="766" y="229" width="6" height="7"/>
+  <!-- API -->
+  <rect class="card" x="538" y="272" width="240" height="58" rx="10"/>
+  <text class="ctitle" x="550" y="294">REST API, long-lived token</text>
+  <text class="meta" x="550" y="314">the assistant's actions land here</text>
+  <!-- ESPHome -->
+  <rect class="card" x="538" y="346" width="240" height="58" rx="10"/>
+  <text class="ctitle" x="550" y="368">ESPHome integration</text>
+  <text class="meta" x="550" y="388">the box's actions, sensors, speaker</text>
+  <!-- Assist -->
+  <rect class="card" x="538" y="420" width="240" height="76" rx="10"/>
+  <text class="ctitle" x="550" y="442">Assist voice pipeline</text>
+  <text class="meta" x="550" y="462">speech to text, text to speech</text>
+  <text class="meta" x="550" y="480">the wake word stays on the box</text>
+  <!-- Automations -->
+  <rect class="card" x="538" y="512" width="240" height="94" rx="10"/>
+  <text class="ctitle" x="550" y="534">Automations and scripts</text>
+  <text class="meta" x="550" y="554">house events become cards:</text>
+  <text class="meta" x="550" y="572">doorbell photo, garage live view,</text>
+  <text class="meta" x="550" y="590">homecoming, waste, weather</text>
+
+  <!-- Home Assistant <-> box: the link -->
+  <path class="lan" d="M802 375 H944"/>
+  <path class="lan" d="M809 369 L800 375 L809 381"/>
+  <path class="lan" d="M937 369 L946 375 L937 381"/>
+  <text class="lab-lan" x="873" y="341" text-anchor="middle">ESPHome API</text>
+  <text class="body" x="873" y="359" text-anchor="middle">encrypted, on the LAN</text>
+  <!-- box -> Home Assistant -->
+  <path class="lan" d="M944 458 H802"/>
+  <path class="lan" d="M809 452 L800 458 L809 464"/>
+  <text class="body" x="873" y="424" text-anchor="middle">voice, touch answers,</text>
+  <text class="body" x="873" y="442" text-anchor="middle">presence, room climate</text>
+  <!-- Home Assistant -> box -->
+  <path class="lan" d="M802 559 H944"/>
+  <path class="lan" d="M937 553 L946 559 L937 565"/>
+  <text class="body" x="873" y="525" text-anchor="middle">cards, scenes, sounds,</text>
+  <text class="body" x="873" y="543" text-anchor="middle">backlight, timers</text>
+
+  <!-- ============ 4. ESP32-S3-BOX-3 ============ -->
+  <rect class="panel" x="948" y="200" width="280" height="440" rx="16"/>
+  <text class="ptitle" x="968" y="232">ESP32-S3-BOX-3, the toy</text>
+  <text class="psub" x="968" y="254">input and output in one small box</text>
+  <!-- the box: body, two microphones, screen with a card, speaker, dock -->
+  <path class="devline" d="M1068 264 V270 M1108 264 V270"/>
+  <rect class="dev" x="1008" y="272" width="160" height="102" rx="12"/>
+  <rect x="1022" y="284" width="118" height="78" rx="4" fill="#0066cc" fill-opacity="0.10" stroke="#d3d6dc" stroke-width="2"/>
+  <rect x="1034" y="296" width="56" height="6" rx="3" fill="#0066cc" fill-opacity="0.55"/>
+  <rect x="1034" y="310" width="94" height="5" rx="2.5" fill="#0066cc" fill-opacity="0.30"/>
+  <rect x="1034" y="321" width="70" height="5" rx="2.5" fill="#0066cc" fill-opacity="0.30"/>
+  <rect x="1034" y="340" width="40" height="12" rx="6" fill="#0071e3"/>
+  <circle class="devfill" cx="1154" cy="298" r="2.2"/>
+  <circle class="devfill" cx="1154" cy="310" r="2.2"/>
+  <circle class="devfill" cx="1154" cy="322" r="2.2"/>
+  <circle class="devfill" cx="1154" cy="334" r="2.2"/>
+  <rect class="dev" x="1030" y="380" width="116" height="12" rx="4"/>
+  <!-- inputs -->
+  <rect class="card" x="968" y="404" width="240" height="92" rx="10"/>
+  <text class="ctitle" x="980" y="426">Inputs</text>
+  <text class="meta" x="980" y="446">two mics, wake word on the box</text>
+  <text class="meta" x="980" y="464">touch: tap, swipe, 3 buttons</text>
+  <text class="meta" x="980" y="482">radar presence, temperature</text>
+  <!-- outputs -->
+  <rect class="card" x="968" y="508" width="240" height="110" rx="10"/>
+  <text class="ctitle" x="980" y="530">Outputs</text>
+  <text class="meta" x="980" y="550">display: cards, scenes, routes,</text>
+  <text class="meta" x="980" y="568">GIFs, live camera view</text>
+  <text class="meta" x="980" y="586">speaker: voice, chime, music</text>
+  <text class="meta" x="980" y="604">backlight on and off</text>
+
+  <!-- box -> internet -->
+  <rect class="halo" x="1242" y="258" width="96" height="52"/>
+  <path class="net" d="M1230 322 H1348"/>
+  <path class="nethead" d="M1341 316 L1350 322 L1341 328"/>
+  <text class="body" x="1290" y="272" text-anchor="middle">pictures, GIFs,</text>
+  <text class="body" x="1290" y="288" text-anchor="middle">maps, routes,</text>
+  <text class="body" x="1290" y="304" text-anchor="middle">music streams</text>
+
+  <!-- ============ 6. Open data on the internet ============ -->
+  <rect class="panel" x="1352" y="200" width="200" height="440" rx="16"/>
+  <text class="ptitle" x="1372" y="232">Open data</text>
+  <text class="ptitle" x="1372" y="254">on the internet</text>
+  <text class="psub" x="1372" y="276">fetched by the box itself</text>
+  <rect class="card" x="1372" y="296" width="160" height="72" rx="10"/>
+  <text class="ctitle" x="1384" y="318">Routes</text>
+  <text class="meta" x="1384" y="338">OpenStreetMap routing</text>
+  <text class="meta" x="1384" y="356">OpenStreetMap map tiles</text>
+  <rect class="card" x="1372" y="380" width="160" height="72" rx="10"/>
+  <text class="ctitle" x="1384" y="402">Pictures and GIFs</text>
+  <text class="meta" x="1384" y="422">any picture on the web</text>
+  <text class="meta" x="1384" y="440">loaded by the box itself</text>
+  <rect class="card" x="1372" y="464" width="160" height="72" rx="10"/>
+  <text class="ctitle" x="1384" y="486">Music</text>
+  <text class="meta" x="1384" y="506">Spotify streams via</text>
+  <text class="meta" x="1384" y="524">Music Assistant</text>
+  <text class="small" x="1372" y="586">no telemetry; nothing else</text>
+  <text class="small" x="1372" y="604">leaves the house</text>
+
+  <!-- house -> Home Assistant -->
+  <path class="lan" d="M658 688 V644"/>
+  <path class="lan" d="M652 651 L658 642 L664 651"/>
+  <text class="lab-lan" x="670" y="670">events become cards</text>
+
+  <!-- ============ 5. The house ============ -->
+  <rect class="panel" x="518" y="690" width="710" height="140" rx="16"/>
+  <text class="stitle" x="538" y="718">The house</text>
+  <text class="meta" x="628" y="718">Home Assistant devices whose events become cards on the box</text>
+  <!-- doorbell with camera -->
+  <rect class="card" x="527" y="732" width="92" height="84" rx="8"/>
+  <rect class="dev" x="565" y="741" width="16" height="26" rx="4"/>
+  <circle class="devline" cx="573" cy="749" r="3.5"/>
+  <circle class="devfill" cx="573" cy="760" r="2"/>
+  <text class="small" x="573" y="791" text-anchor="middle">doorbell</text>
+  <text class="small" x="573" y="805" text-anchor="middle">with camera</text>
+  <!-- garage door -->
+  <rect class="card" x="627" y="732" width="92" height="84" rx="8"/>
+  <path class="dev" d="M660 766 V752 L673 741 L686 752 V766 Z"/>
+  <path class="devline" d="M666 757 H680 M666 762 H680"/>
+  <text class="small" x="673" y="798" text-anchor="middle">garage door</text>
+  <!-- shutters -->
+  <rect class="card" x="727" y="732" width="92" height="84" rx="8"/>
+  <rect class="dev" x="761" y="742" width="24" height="24" rx="2"/>
+  <path class="devline" d="M761 748 H785 M761 754 H785 M761 760 H785"/>
+  <text class="small" x="773" y="798" text-anchor="middle">shutters</text>
+  <!-- TVs -->
+  <rect class="card" x="827" y="732" width="92" height="84" rx="8"/>
+  <rect class="dev" x="860" y="743" width="26" height="17" rx="2"/>
+  <path class="devline" d="M873 760 V766 M867 766 H879"/>
+  <text class="small" x="873" y="798" text-anchor="middle">TVs</text>
+  <!-- speakers -->
+  <rect class="card" x="927" y="732" width="92" height="84" rx="8"/>
+  <rect class="dev" x="965" y="741" width="16" height="26" rx="3"/>
+  <circle class="devline" cx="973" cy="757" r="5"/>
+  <circle class="devfill" cx="973" cy="747" r="1.5"/>
+  <text class="small" x="973" y="798" text-anchor="middle">speakers</text>
+  <!-- calendar -->
+  <rect class="card" x="1027" y="732" width="92" height="84" rx="8"/>
+  <rect class="dev" x="1061" y="744" width="24" height="22" rx="3"/>
+  <path class="devline" d="M1061 751 H1085 M1067 740 V747 M1079 740 V747"/>
+  <text class="small" x="1073" y="798" text-anchor="middle">calendar</text>
+  <!-- waste schedule -->
+  <rect class="card" x="1127" y="732" width="92" height="84" rx="8"/>
+  <path class="devline" d="M1161 748 H1185 M1170 744 H1176"/>
+  <path class="dev" d="M1164 748 L1166 767 H1180 L1182 748 Z"/>
+  <path class="devline" d="M1170 752 V763 M1176 752 V763"/>
+  <text class="small" x="1173" y="791" text-anchor="middle">waste</text>
+  <text class="small" x="1173" y="805" text-anchor="middle">schedule</text>
+
+  <!-- ============ footer ============ -->
+  <text class="foot" x="48" y="878">Source and documentation: github.com/leopardcodeai/muse-esp32boxs3-toy</text>
+  <!-- start-anchored on purpose: cairosvg misplaces tspans inside an end-anchored text -->
+  <text class="mark" x="1451" y="878">Leopard<tspan fill="#005bbb">Code</tspan>.AI</text>
+</svg>

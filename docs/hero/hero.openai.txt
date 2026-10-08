@@ -1,0 +1,7 @@
+provider: openai
+model: gpt-image-2.5-flare
+date: 2026-10-07
+file: hero.jpg (the model's PNG converted to JPEG, quality 88, by hand on the same day)
+png size: 1749153 bytes
+prompt:
+A photorealistic product photograph of a small matte black smart display, the size of a coffee cup, with a 2.4 inch colour touch screen in a rounded housing, standing on a small dock on a light oak desk in a cosy living room at dusk. The screen shows a friendly round blue cartoon character with big dark eyes and a smile on a light grey background, and a small white rounded card with a yellow sun icon beside it. Slightly out of focus behind the display: a smartphone lying on the desk and the corner of an open laptop. Warm lamp light from the left, soft shadows, shallow depth of field, 3:2 landscape. No text, no letters, no numbers, no logos anywhere in the picture.

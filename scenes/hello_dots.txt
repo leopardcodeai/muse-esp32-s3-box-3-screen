@@ -1,0 +1,16 @@
+# Another assistant at the box: Dots counts down to the standup with a ring of dots.
+bg #101820 #16324f
+text 160 26 "Dots" size=m color=#7fd1ff align=center
+text 160 52 "Standup in" size=xs color=#9bb8cc align=center
+circle 160 136 58 #1d4b6e
+circle 160 136 46 #101820
+text 160 136 "4:59" size=xl color=white align=center valign=middle
+circle 160 78 6 #7fd1ff
+circle 201 95 6 #7fd1ff delay=400
+circle 218 136 6 #7fd1ff delay=800
+circle 201 177 6 #7fd1ff delay=1200
+circle 160 194 6 #7fd1ff delay=1600
+circle 119 177 6 #7fd1ff delay=2000
+circle 102 136 6 #7fd1ff delay=2400
+circle 119 95 6 #7fd1ff delay=2800 pulse=1200
+seconds 300

@@ -1,0 +1,8 @@
+# Night clock: the time, the date, a moon, sparkles; stays two minutes.
+bg #0b1d3a #3a1c5c
+icon 262 52 moon-waning-crescent color=#ffd166
+text 20 46 "{time}" size=xxl color=white
+text 22 126 "{weekday}, {date}" size=m color=#c9d6ff
+text 22 156 "Gute Nacht, schlaf gut." color=#9aa6d6 fade=2000
+particles sparkle 25 color=#fff6d5
+seconds 120

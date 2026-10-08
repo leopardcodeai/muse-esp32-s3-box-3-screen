@@ -1,0 +1,23 @@
+# Waste collection tomorrow: at 19:00, and again when someone steps up to the box in the
+# evening (the radar), until 23:00. Needs a calendar with the collection dates.
+alias: "Muse Box: waste tomorrow"
+mode: single
+triggers:
+  - trigger: time
+    at: "19:00:00"
+  - trigger: state
+    entity_id: binary_sensor.muse_box_presence
+    to: "on"
+conditions:
+  - condition: time
+    after: "18:30:00"
+    before: "23:00:00"
+  - condition: template
+    value_template: "{{ state_attr('calendar.waste', 'start_time') is not none and (as_datetime(state_attr('calendar.waste', 'start_time')).date() - now().date()).days == 1 }}"
+actions:
+  - action: esphome.muse_box_muse_show_event
+    continue_on_error: true
+    data:
+      icon: muell
+      title: "Morgen Abfuhr"
+      message: "{{ state_attr('calendar.waste', 'message') }}"

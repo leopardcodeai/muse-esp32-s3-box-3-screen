@@ -1,0 +1,2502 @@
+
+# Muse ESP32BoxS3 Toy: the ESP32-S3-BOX-3 as the face, voice and ears of an AI assistant.
+# Everything that differs from house to house is a substitution or a secret; the rest is
+# the firmware. Docs: ../README.md, ../docs/. Build: esphome compile firmware/muse-box.yaml
+substitutions:
+  name: muse-box                 # device name, also the mDNS name: muse-box.local
+  friendly_name: Muse Box
+  # Home Assistant as the box reaches it (pictures, the doorbell file, routes' "home")
+  ha_url: "http://homeassistant.local:8123"
+  # The AHT20 on the sensor dock sits beside the warm display; on one box it read
+  # 8.34 K too warm over 48 h of comparison. "0" shows the raw value.
+  temperature_offset: "-8.34"
+  # Map tiles for route cards: any {z}/{x}/{y} server with 256 px PNG tiles ({s} becomes
+  # a, b or c). The default is OpenStreetMap's own server, which allows apps that send a
+  # distinct user agent and stay light (docs/PRIVACY.md); the card shows the attribution
+  # the tiles require. Your own tile server or a provider with a key goes here too.
+  map_tiles: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+  # The still picture of your doorbell (or any camera) under Home Assistant's www folder,
+  # shown by muse_show_image with an empty url.
+  doorbell_image: "/local/doorbell_latest.jpg"
+  # "" draws the placeholder figure from figure/; "muse_" the animations that
+  # tools/make_muse_assets.py cuts out of the Muse app as figure/muse_*.png (Meta's
+  # artwork: .gitignore keeps them out of the repository, never commit them).
+  figure_prefix: ""
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: 2026.9.0
+  # MUSE: text cleaning, icons, paging and soft shapes for the display lambda; the scene
+  # language of muse_draw (muse_scene.h, icon names in the generated muse_icons.h).
+  includes:
+    - muse_icons.h
+    - muse_scene.h
+    - muse_fit.h
+    - muse.h
+    - muse_media.h
+    # GIF frames for muse_media.h: AnimatedGIF 2.2.3 (Apache 2.0) as a copy with a small
+    # ESP-IDF fix (muse_gif/README.md); the JPEG and PNG decoders come with online_image.
+    - muse_gif
+  on_boot:
+    - priority: 600
+      then:
+        - lambda: 'muse::media::tile_template() = "${map_tiles}";'
+        - light.turn_on:
+            id: led
+            brightness: 100%
+        - component.update: s3_box_lcd
+        - micro_wake_word.start
+    # MUSE 3.2: both audio chips fail to set up at boot although they answer on the bus;
+    # once everything runs they come up (script audio_init).
+    - priority: -100
+      then:
+        - delay: 3s
+        - script.execute: audio_init
+  project:
+    name: "leopardcodeai.muse_esp32boxs3_toy"
+    version: "4.1.0"
+
+# Optional parts live in packages/. Uncomment a line to take one in: the Samsung TV
+# remote through the dock's IR (not needed for anything else the box does).
+# packages:
+#   samsung_tv_ir: !include packages/samsung_tv_ir.yaml
+
+esp32:
+  board: esp32s3box
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    # MUSE 3.4: TLS 1.3 needs the peer certificate kept after the handshake, which ESPHome
+    # drops by default to save about 4 KB of heap per connection.
+    advanced:
+      disable_mbedtls_peer_cert: false
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      # MUSE 3.4: routing.openstreetmap.de speaks TLS 1.3 only; with 1.2 alone the handshake
+      # ended in a fatal alert (-0x7780, 07.10.2026).
+      CONFIG_MBEDTLS_SSL_PROTO_TLS1_3: "y"
+      # MUSE 3.5: mbedTLS takes its buffers (about 40 KB per handshake) from PSRAM. From
+      # internal RAM, 82 KB free at rest, the display's DMA transfer found no memory during a
+      # handshake ("spi: Transmit failed - err 101", 07.10.2026).
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  actions:
+  # --- MUSE (06.10.2026, v3 07.10.2026): the assistant Muse drives this display ---
+  # Called from Home Assistant, for example:
+  #   action: esphome.muse_box_muse_show_text
+  #   data: {title: "Erinnerung", message: "Sam kommt um 18:30."}
+  # Whatever Muse shows stays a while (text, value and events 20 s, confetti 30 s,
+  # weather 60 s, photos 90 s; long texts page through and stay longer; a scene as long
+  # as it says, 20 s by default), then the status animation returns. The fonts hold no
+  # emoji: weather emojis become icons, every other emoji is dropped (muse.h).
+    - action: muse_set_status
+      variables:
+        status: string
+      then:
+        - lambda: |-
+            // English values; the German ones Muse proposed first are accepted too.
+            id(muse_state) = muse::parse_status(status);
+            // The default label of the status. A label of one's own comes only from
+            // muse_set_status_text.
+            id(muse_status_text) = "";
+        - script.execute: muse_brightness
+    # Same as muse_set_status, plus a label for the status pill instead of its default
+    # text. A second action, because Home Assistant makes every declared argument
+    # mandatory: an extra argument on muse_set_status would break every call that sends
+    # only `status` (measured 07.10.2026: HTTP 400 for a missing argument). The argument
+    # is called `label`: ESPHome reserves `text` as a name (RESERVED_IDS). An empty label
+    # gives the default text. The label is cut to one line that fits the pill, with "…"
+    # at the end, and goes when the status changes.
+    - action: muse_set_status_text
+      variables:
+        status: string
+        label: string
+      then:
+        - lambda: |-
+            id(muse_state) = muse::parse_status(status);
+            id(muse_status_text) = muse::single_line(muse::clean(label, id(m_status)).text);
+            id(muse_status_text_state) = id(muse_state);
+            ESP_LOGI("muse", "status %d, label \"%s\"", id(muse_state), id(muse_status_text).c_str());
+        - script.execute: muse_brightness
+    # MUSE 3.2: the cards below wait in line while another card is on screen; a tap on
+    # the screen shows the next one (muse.h "queue", script muse_next). A card with the
+    # title of the one on screen replaces it at once; the doorbell goes first.
+    - action: muse_show_text
+      variables:
+        title: string
+        message: string
+      then:
+        - lambda: |-
+            auto t = muse::clean(title, id(m_title));
+            auto b = muse::clean(message, id(m_body));
+            muse::Card c;
+            c.mode = 1;
+            c.title = t.text;
+            c.body = b.text;
+            c.icon = b.icon != muse::W_NONE ? b.icon : t.icon;
+            c.ms = 20000;
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "text card waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    - action: muse_show_value
+      variables:
+        label: string
+        value: string
+        unit: string
+      then:
+        - lambda: |-
+            muse::Card c;
+            c.mode = 2;
+            c.label = muse::clean(label, id(m_label)).text;
+            c.value = muse::clean(value, id(m_value)).text;
+            c.unit = muse::clean(unit, id(m_unit)).text;
+            c.ms = 20000;
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "value card waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    - action: muse_celebrate
+      variables:
+        title: string
+        message: string
+      then:
+        - lambda: |-
+            muse::Card c;
+            c.mode = 3;
+            c.title = muse::clean(title, id(m_title)).text;
+            c.body = muse::clean(message, id(m_body)).text;
+            c.ms = 30000;
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "celebration waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    - action: muse_show_weather
+      variables:
+        condition: string
+        temperature: string
+        message: string
+      then:
+        - lambda: |-
+            // condition: Home Assistant's weather state (sunny, rainy, ...) or a
+            // word such as "Regen"; temperature: "14", "14,5 °C" or empty.
+            const auto *w = muse::condition(condition);
+            auto b = muse::clean(message, id(m_body));
+            muse::Card c;
+            c.mode = 4;
+            c.icon = w != nullptr ? w->icon : (b.icon != muse::W_NONE ? b.icon : (int) muse::W_CLOUDY);
+            c.label = w != nullptr ? std::string(w->label) : muse::clean(condition, id(m_label)).text;
+            c.value = muse::temperature(temperature);
+            c.body = b.text;
+            c.ms = 60000;
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "weather card waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    - action: muse_show_event
+      variables:
+        icon: string
+        title: string
+        message: string
+      then:
+        - lambda: |-
+            // icon: klingel, garage, garage_zu, rollladen_runter, rollladen_hoch,
+            // mail, kalender, muell, tv_an, tv_aus, zuhause, briefkasten, tuer,
+            // nachrichten, licht, solar, timer, erledigt, info (English names too).
+            muse::Card c;
+            c.mode = 6;
+            c.event = icon;
+            c.title = muse::clean(title, id(m_title)).text;
+            c.body = muse::clean(message, id(m_body)).text;
+            c.ms = 20000;
+            const int showing = id(muse_mode);
+            const bool urgent = muse::urgent_event(c.event);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, urgent), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "event card waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    - action: muse_show_image
+      variables:
+        title: string
+        message: string
+        url: string
+      then:
+        - lambda: |-
+            // A JPEG (baseline) or PNG, scaled to fit 300x168. Without a URL, or when the
+            // download fails, title and message show as an event card; with the icon of
+            // the card it replaces, so a failed door photo still shows the doorbell.
+            muse::Card c;
+            c.mode = url.empty() ? 6 : 5;
+            c.title = muse::clean(title, id(m_title)).text;
+            c.body = muse::clean(message, id(m_body)).text;
+            c.url = url.str();
+            c.ms = 90000;
+            const auto &now_on = muse::current_card();
+            c.event = (!c.title.empty() && now_on.title == c.title && !now_on.event.empty()) ? now_on.event : "info";
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "photo waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    # A live view (MUSE 3.4): the picture at `url` is fetched again and again for `seconds`
+    # (5 to 120), as fast as the box decodes it. For a camera of Home Assistant use
+    # camera_proxy with its token and &width=300&height=168: two to five pictures a second.
+    - action: muse_show_live
+      variables:
+        title: string
+        url: string
+        seconds: int
+      then:
+        - lambda: |-
+            muse::Card c;
+            c.mode = 5;
+            c.title = muse::clean(title, id(m_title)).text;
+            c.body = "Live";
+            c.url = url.str();
+            c.event = "info";
+            c.live_s = seconds < 5 ? 5 : seconds > 120 ? 120 : seconds;
+            c.ms = c.live_s * 1000 + 3000;
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "live view waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    # A route on a map (MUSE 3.4): `from` and `to` as "lat,lon", as a place name (found
+    # with OpenStreetMap's Nominatim) or "zuhause"; `mode` car, bike or foot (auto,
+    # fahrrad, zu fuss too). The way comes from routing.openstreetmap.de, the map from
+    # the tile server in `map_tiles` (OpenStreetMap by default), so both points leave the
+    # house. Start green, destination red, distance and time below, the tiles' attribution
+    # bottom right. Stays 60 s, waits in line like every card.
+    - action: muse_show_route
+      variables:
+        title: string
+        from: string
+        to: string
+        mode: string
+      then:
+        - lambda: |-
+            muse::Card c;
+            c.mode = 9;
+            c.title = muse::single_line(muse::clean(title, id(m_label)).text);
+            c.from = from.str();
+            c.to = to.str();
+            const std::string m = muse::lower(muse::trim(mode.str()));
+            c.profile = (m == "bike" || m == "fahrrad" || m == "rad" || m == "bicycle") ? "bike"
+                        : (m == "foot" || m == "walk" || m == "zu fuss" || m == "zu fu\u00DF" || m == "laufen" ||
+                           m == "gehen" || m == "fuss")
+                            ? "foot"
+                            : "car";
+            c.event = "info";
+            c.ms = 60000;
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "route waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    # The day's appointments (owner, 07.10.2026: "wenn calendar abgefragt oder was steht
+    # heute an"): a calendar sheet with weekday and day, the title ("Heute" when empty) and
+    # the count, the appointments below, four at a time, paging by themselves. `events`
+    # holds one appointment per line: "09:00-10:00 Teammeeting @ office", "ganztägig
+    # Urlaub", or "09:00 | Teammeeting | office". Stays 30 s, longer for more pages.
+    - action: muse_show_agenda
+      variables:
+        title: string
+        events: string
+      then:
+        - lambda: |-
+            muse::Card c;
+            c.mode = 10;
+            c.title = title.empty() ? std::string("Heute") : muse::single_line(muse::clean(title, id(m_title)).text);
+            c.body = muse::clean(events, id(m_body)).text;
+            const size_t pages = (muse::parse_agenda(c.body).size() + 3) / 4;
+            c.ms = std::max<uint32_t>(30000, (uint32_t) pages * 8000 + 6000);
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "agenda waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    # A picture of Muse's own design: background and gradients, shapes, text in six sizes,
+    # 264 icons, Muse's figure, particles, motion and frames, written in the scene
+    # language of muse_scene.h (README "Scenes", the project history). It stays 20 s unless
+    # the scene says `seconds N`; a scene replaces a scene on screen at once, so Muse can
+    # show one after the other; an empty scene ends it. The response tells Muse what went
+    # wrong, line by line: {"ok", "elements", "frames", "seconds", "skipped", "errors"}.
+    - action: muse_draw
+      variables:
+        scene: string
+      then:
+        - lambda: |-
+            // ESPHome hands string arguments over as StringRef; the parser wants a string.
+            const std::string src = scene.str();
+            auto &r = muse::scene_check();
+            r = muse::scene::parse(src);
+            for (const auto &e : r.errors) ESP_LOGW("muse", "scene %s", e.c_str());
+            if (src.find_first_not_of(" \t\r\n") == std::string::npos) {
+              if (id(muse_mode) == 7) id(muse_next).execute();
+              ESP_LOGI("muse", "scene cleared");
+            } else {
+              muse::Card c;
+              c.mode = 7;
+              c.scene = src;
+              c.ms = r.seconds * 1000;
+              const int showing = id(muse_mode);
+              const auto p = showing == 7 ? muse::REPLACE : muse::place(c, showing, false);
+              if (muse::enqueue(c, p, showing)) id(muse_next).execute();
+              ESP_LOGI("muse", "scene: %u bytes, %u elements, %u frames, %u s, %u skipped, %s",
+                       (unsigned) src.size(), (unsigned) r.items.size(), (unsigned) r.frames.size(),
+                       (unsigned) r.seconds, (unsigned) r.skipped, p == muse::WAIT ? "waits" : "on screen");
+            }
+        - api.respond:
+            data: !lambda |-
+              const auto &s = muse::scene_check();
+              root["ok"] = s.errors.empty();
+              root["elements"] = (int) s.items.size();
+              root["frames"] = (int) s.frames.size();
+              root["seconds"] = (int) s.seconds;
+              root["skipped"] = (int) s.skipped;
+              JsonArray errors = root["errors"].to<JsonArray>();
+              for (const auto &e : s.errors) errors.add(e);
+    # A yes/no question with two buttons (owner, 07.10.2026); it goes before every other
+    # card. The action waits up to 25 s for a tap and answers {"answer", "question"}:
+    # "yes", "no", or "pending" while the question is still on screen (it stays 2 min).
+    # Every answer also lands in the sensor "Antwort" as "yes: <question>", "no: ..." or
+    # "none: ..." when the question went unanswered. Empty labels give "Ja" and "Nein".
+    - action: muse_ask
+      variables:
+        question: string
+        yes_label: string
+        no_label: string
+      then:
+        - lambda: |-
+            std::vector<std::string> options = {
+                yes_label.empty() ? "Ja" : muse::single_line(muse::clean(yes_label, id(m_unit)).text),
+                no_label.empty() ? "Nein" : muse::single_line(muse::clean(no_label, id(m_unit)).text)};
+            muse::ask_prepare(id(muse_answer), id(muse_mode), muse::clean(question, id(m_title)).text, options,
+                              {"yes", "no"});
+            muse::Card c;
+            c.mode = 8;
+            c.title = muse::question().text;
+            c.ms = 120000;
+            muse::enqueue(c, muse::NOW, id(muse_mode));
+            id(muse_next).execute();
+        - media_player.speaker.play_on_device_media_file:
+            media_file: snd_ask
+            announcement: true
+        - wait_until:
+            condition:
+              lambda: 'return !muse::question().open;'
+            timeout: 25s
+        - api.respond:
+            data: !lambda |-
+              const auto &qs = muse::question();
+              root["answer"] = qs.open ? "pending" : qs.answer;
+              root["question"] = qs.text;
+    # A question with two to four answers of Muse's choosing (MUSE 4.0): `options` one per
+    # line. Waits like muse_ask and answers {"answer": the chosen text | "pending"}.
+    - action: muse_choose
+      variables:
+        question: string
+        options: string
+      then:
+        - lambda: |-
+            std::vector<std::string> opts;
+            const std::string all = muse::clean(options, id(m_unit)).text;
+            size_t start = 0;
+            while (start <= all.size() && opts.size() < 4) {
+              size_t nl = all.find('\n', start);
+              if (nl == std::string::npos) nl = all.size();
+              const std::string line = muse::single_line(all.substr(start, nl - start));
+              start = nl + 1;
+              if (!line.empty()) opts.push_back(line);
+            }
+            if (opts.size() < 2) opts = {"Ja", "Nein"};
+            muse::ask_prepare(id(muse_answer), id(muse_mode), muse::clean(question, id(m_title)).text, opts, opts);
+            muse::Card c;
+            c.mode = 8;
+            c.title = muse::question().text;
+            c.ms = 120000;
+            muse::enqueue(c, muse::NOW, id(muse_mode));
+            id(muse_next).execute();
+        - media_player.speaker.play_on_device_media_file:
+            media_file: snd_ask
+            announcement: true
+        - wait_until:
+            condition:
+              lambda: 'return !muse::question().open;'
+            timeout: 25s
+        - api.respond:
+            data: !lambda |-
+              const auto &qs = muse::question();
+              root["answer"] = qs.open ? "pending" : qs.answer;
+              root["question"] = qs.text;
+    # Waits up to `seconds` (1 to 60) for the next answer a touch gives: a question button
+    # or a `button` in a scene (muse_draw). Answers {"answered": bool, "answer": text}.
+    - action: muse_wait_answer
+      variables:
+        seconds: int
+      then:
+        - lambda: |-
+            id(answer_wait_from) = muse::answer_count();
+            const int s = seconds < 1 ? 1 : seconds > 60 ? 60 : seconds;
+            id(answer_wait_until) = millis() + (uint32_t) s * 1000;
+        - while:
+            condition:
+              lambda: |-
+                return muse::answer_count() == id(answer_wait_from) &&
+                       (int32_t) (id(answer_wait_until) - millis()) > 0;
+            then:
+              - delay: 200ms
+        - api.respond:
+            data: !lambda |-
+              const bool answered = muse::answer_count() != id(answer_wait_from);
+              root["answered"] = answered;
+              root["answer"] = answered ? muse::last_answer() : "";
+    # A timer on the box (MUSE 4.0): `duration` as "5", "5 min", "1:30", "90 s" or
+    # "1 h 20 min"; `label` names it ("Pizza"). The card shows the ring and the time, the
+    # chime plays and a card says so when it ends. Timers set by voice through Home
+    # Assistant appear the same way.
+    - action: muse_show_timer
+      variables:
+        label: string
+        duration: string
+      then:
+        - lambda: |-
+            const uint32_t secs = muse::parse_duration(duration.str());
+            muse::placed_now() = false;
+            if (secs == 0 || secs > 24 * 3600) {
+              ESP_LOGW("muse", "timer: '%s' is no duration", duration.c_str());
+              return;
+            }
+            muse::TimerEntry e;
+            e.local = true;
+            e.id = "local-" + std::to_string(++id(muse_timer_serial));
+            e.name = muse::single_line(muse::clean(label, id(m_label)).text);
+            if (e.name.empty()) e.name = "Timer";
+            e.total = secs;
+            e.left = secs;
+            e.end_ms = millis() + secs * 1000;
+            muse::timers().push_back(e);
+            muse::placed_now() = true;
+            ESP_LOGI("muse", "timer %s: %u s", e.name.c_str(), (unsigned) secs);
+        - if:
+            condition:
+              lambda: 'return muse::placed_now();'
+            then:
+              - script.execute: muse_timer_card
+        - api.respond:
+            data: !lambda |-
+              root["ok"] = muse::placed_now();
+              root["seconds"] = muse::placed_now() ? (int) muse::timers().back().total : 0;
+              root["timers"] = (int) muse::timers().size();
+    # Cancels the box's own timers: all with `label` empty, else those with that name.
+    - action: muse_cancel_timer
+      variables:
+        label: string
+      then:
+        - lambda: |-
+            auto &t = muse::timers();
+            const std::string want = muse::lower(muse::trim(label.str()));
+            const size_t before = t.size();
+            t.erase(std::remove_if(t.begin(), t.end(),
+                                   [&](const muse::TimerEntry &e) {
+                                     return e.local && (want.empty() || muse::lower(e.name) == want);
+                                   }),
+                    t.end());
+            muse::placed_now() = before != t.size();
+            ESP_LOGI("muse", "timers cancelled: %u", (unsigned) (before - t.size()));
+        - api.respond:
+            data: !lambda |-
+              root["cancelled"] = muse::placed_now();
+              root["timers"] = (int) muse::timers().size();
+    # A list (MUSE 4.0): shopping, tasks, anything with ticks. `items` one per line,
+    # "[x] Milch" done, "[ ] Brot" or "- Brot" open. Five per page, pages turn by themselves.
+    - action: muse_show_list
+      variables:
+        title: string
+        items: string
+      then:
+        - lambda: |-
+            muse::Card c;
+            c.mode = 13;
+            c.title = title.empty() ? std::string("Liste") : muse::single_line(muse::clean(title, id(m_title)).text);
+            c.body = muse::clean(items, id(m_body)).text;
+            const size_t pages = (muse::parse_list(c.body).size() + 4) / 5;
+            c.ms = std::max<uint32_t>(30000, (uint32_t) pages * 8000 + 6000);
+            const int showing = id(muse_mode);
+            muse::placed_now() = muse::enqueue(c, muse::place(c, showing, false), showing);
+            if (muse::placed_now()) id(muse_next).execute();
+            else ESP_LOGI("muse", "list waits, %u in line", (unsigned) muse::queue().size());
+        - api.respond:
+            data: !lambda |-
+              root["on_screen"] = muse::placed_now();
+              root["waiting"] = (int) muse::queue().size();
+    # Every card gone, the line emptied, the status back (MUSE 4.0). An open question
+    # counts as unanswered.
+    - action: muse_clear
+      then:
+        - lambda: |-
+            muse::placed_now() = id(muse_mode) != 0 || !muse::queue().empty();
+            ESP_LOGI("muse", "clear: %u waiting dropped", (unsigned) muse::queue().size());
+            muse::queue().clear();
+        - script.execute: muse_next
+        - api.respond:
+            data: !lambda |-
+              root["cleared"] = muse::placed_now();
+    # What the box shows and knows right now (MUSE 4.0), for Muse to decide what to send.
+    - action: muse_get_state
+      then:
+        - api.respond:
+            data: !lambda |-
+              static const char *const MODES[] = {"status", "text", "value", "celebration", "weather", "photo",
+                                                  "event", "scene", "question", "route", "agenda", "timer",
+                                                  "info", "list"};
+              const int mode = id(muse_mode);
+              root["mode"] = mode >= 0 && mode <= 13 ? MODES[mode] : "?";
+              root["title"] = id(muse_title);
+              root["waiting"] = (int) muse::queue().size();
+              root["history"] = (int) muse::history().size();
+              root["question_open"] = muse::question().open;
+              root["last_answer"] = muse::last_answer();
+              root["status"] = id(muse_state);
+              root["listening"] = id(muse_state) == 1;
+              root["muted"] = id(mute_switch).state;
+              root["presence"] = id(radar_presence).state;
+              root["battery_pct"] = (int) id(battery_pct).state;
+              root["wifi_dbm"] = (int) id(wifi_rssi).state;
+              root["timers"] = (int) muse::timers().size();
+              root["volume"] = (int) lroundf(id(muse_player)->volume * 100);
+              root["display_off"] = id(muse_screen_off);
+              root["version"] = "4.1.0";
+    # Hardware check: asks every chip of the box and of the sensor dock
+    # who it is, reads the pins of buttons, touch and radar, the battery voltage and how
+    # the audio chips came up. Read only. The answer lists every reading with what a
+    # healthy box shows in brackets; the same lines go to the log ("hw: ...").
+    - action: muse_hw_check
+      then:
+        - lambda: |-
+            auto &rep = muse::hw_report();
+            rep.items.clear();
+            auto *a = id(bus_a);
+            auto *b = id(bus_b);
+            rep.add("es8311 speaker chip id (83 11)", muse::reg_read(a, 0x18, 0xFD, false, 2));
+            rep.add("es7210 microphone chip id (72 10)", muse::reg_read(a, 0x40, 0x3D, false, 2));
+            rep.add("touch gt911 at 0x5D (39 31 31)", muse::reg_read(a, 0x5D, 0x8140, true, 3));
+            rep.add("touch gt911 at 0x14 (39 31 31)", muse::reg_read(a, 0x14, 0x8140, true, 3));
+            rep.add("imu icm-42607 at 0x68, who_am_i (60)", muse::reg_read(a, 0x68, 0x75, false, 1));
+            rep.add("imu icm-42607 at 0x69, who_am_i (60)", muse::reg_read(a, 0x69, 0x75, false, 1));
+            rep.add("dock chip 0x28, registers 00-07", muse::reg_read(b, 0x28, 0x00, false, 8));
+            rep.add("dock aht20 0x38, status (18 or 1C)", muse::reg_read(b, 0x38, 0x71, false, 1));
+            rep.add("audio chips ready (script audio_init)",
+                    std::string(id(audio_ok) ? "yes" : "no") + ", tries " + std::to_string(id(audio_tries)));
+            rep.add("touch gt911 set up", id(box_touch)->is_failed() ? "failed" : "yes");
+            rep.add("cards waiting", std::to_string(muse::queue().size()));
+            rep.add("internal RAM free, largest block",
+                    std::to_string(heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024) + " KB, " +
+                        std::to_string(heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) / 1024) + " KB");
+            rep.add("PSRAM free", std::to_string(heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024) + " KB");
+            rep.add("es8311 failed at boot", id(es8311_dac)->is_failed() ? "yes" : "no");
+            rep.add("es7210 failed at boot", id(es7210_adc)->is_failed() ? "yes" : "no");
+            rep.add("es8311 register 00 (80)", muse::reg_read(a, 0x18, 0x00, false, 1));
+            rep.add("es7210 register 40 (C3)", muse::reg_read(a, 0x40, 0x40, false, 1));
+            rep.add("gpio0 top left button (1 up, 0 pressed)", std::to_string(gpio_get_level(GPIO_NUM_0)));
+            rep.add("gpio1 mute switch", std::to_string(gpio_get_level(GPIO_NUM_1)));
+            rep.add("gpio3 touch interrupt", std::to_string(gpio_get_level(GPIO_NUM_3)));
+            rep.add("gpio21 radar, raw", std::to_string(gpio_get_level(GPIO_NUM_21)));
+            char v[24];
+            snprintf(v, sizeof(v), "%.2f V", id(battery_voltage)->state);
+            rep.add("battery voltage (3.0 to 4.2)", v);
+            for (const auto &kv : rep.items) ESP_LOGI("muse", "hw: %s = %s", kv.first.c_str(), kv.second.c_str());
+        - api.respond:
+            data: !lambda |-
+              for (const auto &kv : muse::hw_report().items) root[kv.first] = kv.second;
+  # --- end MUSE actions ---
+
+globals:
+  # MUSE: 0 ready, 1 listening, 2 thinking, 3 speaking, 4 error, 5 quiet, 6 greeting
+  - id: muse_state
+    type: int
+    restore_value: false
+    initial_value: '0'
+  # MUSE: 0 status, 1 text or conversation, 2 value, 3 celebration, 4 weather,
+  # 5 photo, 6 event, 7 scene (muse_draw)
+  - id: muse_mode
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: muse_title
+    type: std::string
+    restore_value: false
+  - id: muse_body
+    type: std::string
+    restore_value: false
+  - id: muse_label
+    type: std::string
+    restore_value: false
+  - id: muse_value
+    type: std::string
+    restore_value: false
+  - id: muse_unit
+    type: std::string
+    restore_value: false
+  # weather icon of a text or weather card (muse::Weather), -1 for none
+  - id: muse_icon
+    type: int
+    restore_value: false
+    initial_value: '-1'
+  # icon name of an event card (muse::event)
+  - id: muse_event
+    type: std::string
+    restore_value: false
+  # the text card is a voice conversation: the question on top, the answer below
+  - id: muse_conv
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  # counts up with every new content; the display lambda re-wraps text on change
+  - id: muse_version
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  # millis() when the content appeared, and when the status returns
+  - id: muse_since
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: muse_until
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  # photo download: 0 none, 1 loading, 2 ready, 3 failed
+  - id: muse_photo_state
+    type: int
+    restore_value: false
+    initial_value: '0'
+  # backlight level last set by the script muse_brightness
+  - id: muse_level
+    type: float
+    restore_value: false
+    initial_value: '0.0'
+  # label of the status pill set by muse_set_status_text, and the status it belongs to;
+  # it is shown only while that status stays (the display lambda drops it otherwise)
+  - id: muse_status_text
+    type: std::string
+    restore_value: false
+  - id: muse_status_text_state
+    type: int
+    restore_value: false
+    initial_value: '-1'
+  # the top left button switched the display light off (script muse_brightness)
+  - id: muse_screen_off
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  # Muse is being cuddled (a tap on the ready screen) until this millis()
+  - id: muse_cuddle_until
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  # where and when the finger came down (touchscreen)
+  - id: touch_x
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: touch_y
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: touch_at
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  # what the last touch asks for: 0 nothing, 4 listen (voice assistant)
+  - id: touch_action
+    type: int
+    restore_value: false
+    initial_value: '0'
+  # where the finger was last seen (touchscreen on_update), for swipes
+  - id: last_x
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: last_y
+    type: int
+    restore_value: false
+    initial_value: '0'
+  # muse_wait_answer: the answer count it started from, and its deadline
+  - id: answer_wait_from
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: answer_wait_until
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  # millis() when the radar last stopped seeing someone (night calm, switch night_calm)
+  - id: radar_off_since
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  # the box's own timers get ids local-1, local-2, ...; the name of the one that ended last
+  - id: muse_timer_serial
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+  - id: muse_timer_name
+    type: std::string
+    restore_value: false
+  # the audio chips answer right after script audio_init, and how many tries it took
+  - id: audio_ok
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: audio_tries
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+ota:
+  - platform: esphome
+    # Uploads use the same key as the API; a separate OTA password would cost flash.
+    encryption:
+      key: !secret api_encryption_key
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+  logs:
+    text_sensor: WARN
+    component: ERROR
+    # MUSE v3: online_image logs the whole photo URL at DEBUG, and the garage
+    # URL carries the camera's access token; http_request warns on every photo
+    # that it found no cache headers.
+    online_image: INFO
+    http_request: ERROR
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # DHCP by default. For a fixed address add manual_ip with static_ip, gateway, subnet
+  # AND dns1: without dns1 the box resolves no host name and every picture from the
+  # web fails ("couldn't get hostname"), a lesson of 07.10.2026.
+  ap:
+    ssid: ${name}
+    password: !secret ap_password
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+# =============================================================================
+# BLUETOOTH PROXY
+# =============================================================================
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+# =============================================================================
+# I2C
+# =============================================================================
+
+i2c:
+  - id: bus_b
+    sda: GPIO41
+    scl: GPIO40
+    scan: true
+  # MUSE 3.2 (07.10.2026): the bus of the box's own audio chips (ES7210 microphones,
+  # ES8311 speaker) and touch screen. It was missing, so neither chip was ever set up:
+  # the assist satellite stayed idle or unavailable for ten days, never listening.
+  - id: bus_a
+    sda: GPIO8
+    scl: GPIO18
+    scan: true
+
+# =============================================================================
+# SPI
+# =============================================================================
+
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO6
+
+# =============================================================================
+# FONTS
+# =============================================================================
+# MUSE v3 (07.10.2026): Inter, a plain screen typeface (SIL Open Font Licence),
+# replaces Nunito, which looked soft and grey at these sizes. Every print passes
+# the colour behind the text (muse.h explains why). The PV, weather, house,
+# media and system pages are gone, and with them the Consolas fonts and the
+# values they fetched from Home Assistant: the box shows only Muse (owner,
+# 06.10.2026). The Muse app's own typeface (Optimistic) may not be altered,
+# so it is not used.
+
+font:
+  - file: "gfonts://Inter@800"
+    id: m_brand
+    size: 19
+    bpp: 4
+    glyphs: "Muse"
+  - file: "gfonts://Inter@600"
+    id: m_clock
+    size: 17
+    bpp: 4
+    glyphs: "0123456789:"
+  - file: "gfonts://Inter@600"
+    id: m_status
+    size: 16
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - file: "gfonts://Inter@700"
+    id: m_title
+    size: 20
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - file: "gfonts://Inter@500"
+    id: m_body
+    size: 16
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - file: "gfonts://Inter@500"
+    id: m_small
+    size: 13
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  - file: "gfonts://Inter@600"
+    id: m_label
+    size: 17
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  # Values, and the largest scene text (xxl): letters, digits and a little punctuation.
+  - file: "gfonts://Inter@700"
+    id: m_value
+    size: 54
+    bpp: 4
+    glyphs: "0123456789,.:-+%°/ abcdefghijklmnopqrstuvwxyzäöüßABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ€!?'&()"
+  - file: "gfonts://Inter@600"
+    id: m_unit
+    size: 24
+    bpp: 4
+    glyphsets: [GF_Latin_Core]
+    ignore_missing_glyphs: true
+  # Headlines of a scene (xl, 36 px). ASCII, German and common accents instead of all of
+  # GF_Latin_Core, which would cost about three times the flash at this size.
+  - file: "gfonts://Inter@700"
+    id: m_head
+    size: 36
+    bpp: 4
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~äöüÄÖÜß€°„“”‘’–—…•·àáâéèêëíìîïóòôúùûçñÀÁÉÈÓÚÇÑ"
+  # Icons: Material Design Icons 7.4.47 (Apache 2.0). The glyph list is generated with the
+  # name table muse_icons.h by make_muse_icon_table.py, and holds the icons of muse::event
+  # (event cards) as well as every icon a scene may name.
+  - file:
+      type: web
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: m_icons
+    size: 46
+    bpp: 4
+    glyphs: !include muse_icon_glyphs.yaml
+  - file:
+      type: web
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: m_icons_s
+    size: 24
+    bpp: 4
+    glyphs: !include muse_icon_glyphs.yaml
+  # Status bar (MUSE 3.2): the Wi-Fi fan in five strengths and off, the crossed-out microphone.
+  - file:
+      type: web
+      url: "https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf"
+    id: m_status_icons
+    size: 18
+    bpp: 4
+    glyphs: ["\U000F092F", "\U000F091F", "\U000F0922", "\U000F0925", "\U000F0928", "\U000F092E", "\U000F036D"]
+
+sensor:
+  - platform: aht10
+    id: dock_climate
+    i2c_id: bus_b
+    variant: AHT20
+    # The AHT20 shares the board with the ESP32-S3 and the always-on display, so it
+    # reads too warm; `temperature_offset` (substitutions) corrects it. 60 s instead
+    # of 10 s on purpose: reading less often takes real heat away, the offset only
+    # calculates. Compare against a reference thermometer after the first flash.
+    update_interval: 60s
+    temperature:
+      name: "Temperature"
+      id: box3_temperatur
+      filters:
+        - offset: ${temperature_offset}
+    humidity:
+      name: "Humidity"
+      id: box3_feuchte
+      filters:
+        # The sensor measures relative humidity at its own, too warm chip. The vapour
+        # pressure is the same as in the room; only the relative humidity falls when
+        # air gets warmer. So it is recalculated for the corrected temperature with
+        # the Magnus formula; a fixed addition would be wrong at every other temperature.
+        - lambda: |-
+            float t_room = id(box3_temperatur).state;
+            if (isnan(t_room) || isnan(x)) return x;
+            float t_chip = t_room - (${temperature_offset});
+            float p_chip = 6.112f * expf(17.62f * t_chip / (243.12f + t_chip));
+            float p_room = 6.112f * expf(17.62f * t_room / (243.12f + t_room));
+            float rh = x * p_chip / p_room;
+            return rh > 100.0f ? 100.0f : (rh < 0.0f ? 0.0f : rh);
+
+  - platform: adc
+    pin: GPIO10
+    id: battery_voltage
+    unit_of_measurement: "V"
+    accuracy_decimals: 1
+    update_interval: 30s
+    attenuation: auto
+    filters:
+      - multiply: 4.11
+
+  # MUSE 3.4: "zuhause" in a route (muse_show_route) means zone.home.
+  - platform: homeassistant
+    id: home_latitude
+    entity_id: zone.home
+    attribute: latitude
+    internal: true
+    on_value:
+      - lambda: 'muse::media::home_lat() = x;'
+  - platform: homeassistant
+    id: home_longitude
+    entity_id: zone.home
+    attribute: longitude
+    internal: true
+    on_value:
+      - lambda: 'muse::media::home_lon() = x;'
+
+  - platform: wifi_signal
+    id: wifi_rssi
+    name: "Wi-Fi Signal"
+    update_interval: 30s
+    entity_category: diagnostic
+
+  - platform: copy
+    id: battery_pct
+    source_id: battery_voltage
+    name: "Battery"
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: "battery"
+    filters:
+      - lambda: return (x - 2.7) / (4.2 - 2.7) * 100;
+      - clamp:
+          min_value: 0
+          max_value: 100
+
+text_sensor:
+  # MUSE 3.2: the answer to Muse's last yes/no question (muse_ask): "yes: <question>",
+  # "no: ..." or "none: ..." when it went unanswered.
+  - platform: template
+    id: muse_answer
+    name: "Answer"
+    icon: mdi:gesture-tap-button
+  # MUSE: sunrise and sunset for the backlight schedule (script muse_brightness).
+  - platform: homeassistant
+    id: ha_sun
+    entity_id: sun.sun
+    internal: true
+    on_value:
+      - script.execute: muse_brightness
+
+binary_sensor:
+  # MUSE 3.2 (07.10.2026): the radar raises GPIO21 for each movement it sees, for 1 to 7 s:
+  # 1,423 changes and 696 times "on" in 24 h, and Muse waved at every one of them.
+  # Presence now holds 30 s after the last movement, Muse waves once when someone
+  # arrives, and a dot left of the clock shows that the radar sees someone.
+  - platform: gpio
+    id: radar_presence
+    pin: GPIO21
+    name: "Presence"
+    device_class: "occupancy"
+    filters:
+      - delayed_off: 30s
+    on_press:
+      - logger.log:
+          tag: muse
+          level: INFO
+          format: "radar: someone is there"
+      - script.execute: muse_greet
+      - script.execute: muse_brightness
+    on_release:
+      - lambda: 'id(radar_off_since) = millis();'
+      - logger.log:
+          tag: muse
+          level: INFO
+          format: "radar: nobody for 30 s"
+  # MUSE 3.2: the buttons on top. Mute (GPIO1) cuts the microphones in hardware and
+  # reports it here; top left ("light/boot", GPIO0) switches the display light; bottom
+  # left switches the power in hardware, the firmware cannot see it.
+  - platform: gpio
+    id: mute_switch
+    name: "Mute Switch"
+    pin:
+      number: GPIO1
+      inverted: true
+    on_press:
+      - logger.log:
+          tag: muse
+          level: INFO
+          format: "mute switch: microphones off"
+    on_release:
+      - logger.log:
+          tag: muse
+          level: INFO
+          format: "mute switch: microphones on"
+  - platform: gpio
+    id: top_button
+    name: "Top Left Button"
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+      ignore_strapping_warning: true
+    on_click:
+      - min_length: 30ms
+        max_length: 1500ms
+        then:
+          - lambda: |-
+              id(muse_screen_off) = !id(muse_screen_off);
+              ESP_LOGI("muse", "top left button: display light %s", id(muse_screen_off) ? "off" : "on");
+          - script.execute: muse_brightness
+
+# =============================================================================
+# DISPLAY
+# =============================================================================
+# The figure: figure/*.png, 160 x 160 animated PNGs plus a 72 x 72 avatar. The repo
+# ships a neutral placeholder character (tools/make_placeholder_figure.py). With the
+# Muse app installed, tools/make_muse_assets.py cuts Muse's own animations into the
+# same files; those are Meta's artwork and must never be committed (tools/check_private.py
+# refuses). The page background 243,243,243 is the colour every frame fades into.
+# MUSE v3 (07.10.2026): weather icons from Meteocons (MIT), built by
+# make_muse_icons.py into icons/ (committed, licence beside them). Their order
+# is muse::Weather.
+image:
+  - platform: file
+    file: "figure/${figure_prefix}avatar.png"
+    id: muse_avatar
+    type: RGB565
+  - platform: animation
+    file: "figure/${figure_prefix}idle.png"
+    id: muse_idle
+    type: RGB565
+  - platform: animation
+    file: "figure/${figure_prefix}working.png"
+    id: muse_working
+    type: RGB565
+  - platform: animation
+    file: "figure/${figure_prefix}wave.png"
+    id: muse_wave
+    type: RGB565
+  - platform: animation
+    file: "figure/${figure_prefix}making.png"
+    id: muse_making
+    type: RGB565
+  - platform: animation
+    file: "figure/${figure_prefix}confetti.png"
+    id: muse_confetti
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_clear_day.png"
+    id: wx72_clear_day
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_clear_night.png"
+    id: wx72_clear_night
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_partly_day.png"
+    id: wx72_partly_day
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_partly_night.png"
+    id: wx72_partly_night
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_cloudy.png"
+    id: wx72_cloudy
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_overcast.png"
+    id: wx72_overcast
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_fog.png"
+    id: wx72_fog
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_drizzle.png"
+    id: wx72_drizzle
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_rain.png"
+    id: wx72_rain
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_extreme_rain.png"
+    id: wx72_extreme_rain
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_showers.png"
+    id: wx72_showers
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_thunder.png"
+    id: wx72_thunder
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_thunder_rain.png"
+    id: wx72_thunder_rain
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_snow.png"
+    id: wx72_snow
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_sleet.png"
+    id: wx72_sleet
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_hail.png"
+    id: wx72_hail
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_wind.png"
+    id: wx72_wind
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_tornado.png"
+    id: wx72_tornado
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_umbrella.png"
+    id: wx72_umbrella
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_thermometer.png"
+    id: wx72_thermometer
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_raindrop.png"
+    id: wx72_raindrop
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_sunrise.png"
+    id: wx72_sunrise
+    type: RGB565
+  - platform: file
+    file: "icons/wx72_sunset.png"
+    id: wx72_sunset
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_clear_day.png"
+    id: wx104_clear_day
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_clear_night.png"
+    id: wx104_clear_night
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_partly_day.png"
+    id: wx104_partly_day
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_partly_night.png"
+    id: wx104_partly_night
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_cloudy.png"
+    id: wx104_cloudy
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_overcast.png"
+    id: wx104_overcast
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_fog.png"
+    id: wx104_fog
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_drizzle.png"
+    id: wx104_drizzle
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_rain.png"
+    id: wx104_rain
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_extreme_rain.png"
+    id: wx104_extreme_rain
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_showers.png"
+    id: wx104_showers
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_thunder.png"
+    id: wx104_thunder
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_thunder_rain.png"
+    id: wx104_thunder_rain
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_snow.png"
+    id: wx104_snow
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_sleet.png"
+    id: wx104_sleet
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_hail.png"
+    id: wx104_hail
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_wind.png"
+    id: wx104_wind
+    type: RGB565
+  - platform: file
+    file: "icons/wx104_tornado.png"
+    id: wx104_tornado
+    type: RGB565
+  # MUSE: a photo from Home Assistant (doorbell, garage) or the web, loaded by
+  # muse_show_image. Only baseline JPEG and PNG; HA's camera_proxy and the
+  # doorbell's /local image are both baseline (measured 06.10.2026).
+  - platform: online_image
+    id: muse_photo
+    url: "${ha_url}${doorbell_image}"
+    format: AUTO
+    type: RGB565
+    resize: 300x168
+    on_download_finished:
+      - lambda: 'id(muse_photo_state) = 2;'
+    on_error:
+      - lambda: |-
+          id(muse_photo_state) = 3;
+          ESP_LOGW("muse", "photo failed; the reason is in the online_image, http_request or esp-tls line above");
+          if (id(muse_mode) == 5) {
+            id(muse_mode) = 6;
+            id(muse_version)++;
+          }
+
+http_request:
+  timeout: 15s
+  # Signed URLs from the web (Muse's files, CDNs) easily pass 512 bytes, the default
+  # for the request line and for each received header block.
+  buffer_size_rx: 2048
+  buffer_size_tx: 2048
+
+display:
+  - platform: ili9xxx
+    id: s3_box_lcd
+    model: S3BOX
+    data_rate: 40MHz
+    cs_pin: GPIO5
+    dc_pin: GPIO4
+    reset_pin:
+      number: GPIO48
+      inverted: true
+    update_interval: never
+    invert_colors: false
+    lambda: |-
+      // MUSE v3 (07.10.2026): only Muse. The status, a text or a voice
+      // conversation, a value, a celebration, the weather, an event or a photo.
+      // Redrawn every 100 ms by the interval below. Helpers live in muse.h.
+      const Color BG(243, 243, 243), INK(28, 28, 30), SUB(99, 99, 104);
+      const Color CARD(255, 255, 255), TXT(44, 44, 46), SHADOW(226, 226, 231);
+      const Color WHITE(255, 255, 255);
+      const uint32_t now = millis();
+
+      // Content that has had its time gives way to the status; a conversation
+      // that is still being answered stays.
+      const bool talking = id(muse_conv) && (id(muse_state) == 2 || id(muse_state) == 3);
+      if (id(muse_mode) != 0 && !talking && (int32_t) (now - id(muse_until)) > 0) {
+        ESP_LOGI("muse", "card %d gone after %u ms", id(muse_mode), (unsigned) (now - id(muse_since)));
+        id(muse_next).execute();  // the next card in line, or the status
+      }
+      // The box's own timers count here; one that just ended goes to muse_timer_done.
+      {
+        const std::string ended = muse::timers_tick(now);
+        if (!ended.empty()) {
+          id(muse_timer_name) = ended;
+          id(muse_timer_done).execute();
+        }
+      }
+
+      static const muse::SceneAssets ASSETS = {
+          {id(m_small), id(m_body), id(m_title), id(m_unit), id(m_head), id(m_value)},
+          {id(m_icons_s), id(m_icons)},
+          {id(muse_idle), id(muse_wave), id(muse_working), id(muse_making)},
+          id(muse_avatar)};
+      // A scene of Muse's own fills the whole screen, without brand and clock; it may
+      // skip a refresh when it is slow (draw_scene in muse.h), so it fills the page itself.
+      if (id(muse_mode) == 7) {
+        muse::draw_scene(it, id(s3_box_lcd), muse::scene::current(), id(muse_version), now - id(muse_since),
+                         id(ha_time).now(), ASSETS);
+        return;
+      }
+      it.fill(BG);
+
+      it.print(14, 7, id(m_brand), INK, TextAlign::TOP_LEFT, "Muse", BG);
+      // The top bar as on an iPhone (owner, 07.10.2026): the time in the middle; on the
+      // right battery, Wi-Fi, the orange microphone dot while Muse listens, the crossed-out
+      // microphone while the mute switch is on, the teal radar dot (muse::status_right).
+      auto clock = id(ha_time).now();
+      if (clock.is_valid())
+        it.strftime(160, 8, id(m_clock), INK, BG, TextAlign::TOP_CENTER, "%H:%M", clock);
+      muse::status_right(it, 306, 17, id(battery_pct).state, id(wifi_rssi).state, id(muse_state) == 1,
+                         id(mute_switch).state, id(radar_presence).state, id(m_status_icons), INK, SHADOW, BG);
+      // Right of the brand: a running timer as "4:59" while its card is not up, and an
+      // orange "+N" when more cards wait in line (a tap shows the next).
+      int badge_x = 68;
+      const auto *soonest = muse::timer_soonest();
+      if (soonest != nullptr && id(muse_mode) != 11) {
+        char left[12];
+        if (soonest->left >= 3600)
+          snprintf(left, sizeof(left), "%u:%02u:%02u", (unsigned) soonest->left / 3600,
+                   (unsigned) (soonest->left / 60) % 60, (unsigned) soonest->left % 60);
+        else
+          snprintf(left, sizeof(left), "%u:%02u", (unsigned) soonest->left / 60, (unsigned) soonest->left % 60);
+        const int bw = muse::text_width(it, left, id(m_small)) + 14;
+        const Color TIMER(255, 149, 0);
+        muse::round_rect(it, badge_x, 8, bw, 19, 9, TIMER, BG);
+        it.print(badge_x + bw / 2, 17, id(m_small), WHITE, TextAlign::CENTER, left, TIMER);
+        badge_x += bw + 6;
+      }
+      const size_t waiting = muse::queue().size();
+      if (waiting > 0 && id(muse_mode) != 0) {
+        char more[8];
+        snprintf(more, sizeof(more), "+%u", (unsigned) waiting);
+        const int bw = muse::text_width(it, more, id(m_small)) + 14;
+        muse::round_rect(it, badge_x, 8, bw, 19, 9, Color(255, 149, 0), BG);
+        it.print(badge_x + bw / 2, 17, id(m_small), WHITE, TextAlign::CENTER, more, Color(255, 149, 0));
+      }
+
+      static esphome::image::Image *const WX[] = {id(wx72_clear_day), id(wx72_clear_night), id(wx72_partly_day), id(wx72_partly_night), id(wx72_cloudy), id(wx72_overcast), id(wx72_fog), id(wx72_drizzle), id(wx72_rain), id(wx72_extreme_rain), id(wx72_showers), id(wx72_thunder), id(wx72_thunder_rain), id(wx72_snow), id(wx72_sleet), id(wx72_hail), id(wx72_wind), id(wx72_tornado), id(wx72_umbrella), id(wx72_thermometer), id(wx72_raindrop), id(wx72_sunrise), id(wx72_sunset)};
+      static esphome::image::Image *const WX_LARGE[] = {id(wx104_clear_day), id(wx104_clear_night), id(wx104_partly_day), id(wx104_partly_night), id(wx104_cloudy), id(wx104_overcast), id(wx104_fog), id(wx104_drizzle), id(wx104_rain), id(wx104_extreme_rain), id(wx104_showers), id(wx104_thunder), id(wx104_thunder_rain), id(wx104_snow), id(wx104_sleet), id(wx104_hail), id(wx104_wind), id(wx104_tornado)};
+      static const bool QUOTES = id(m_title)->find_glyph(0x201E) != nullptr;
+      static const char *const MORE = id(m_title)->find_glyph(0x2026) != nullptr ? " …" : " ...";
+      static muse::Paged paged;
+      const int mode = id(muse_mode);
+      const uint32_t shown = now - id(muse_since);
+      // Wraps the text again when it changed; a long text keeps its card longer.
+      auto layout = [&](const std::string &text, esphome::display::BaseFont *f, int width, int per) {
+        if (paged.version == id(muse_version) && paged.per_page == per) return;
+        paged.build(it, id(muse_version), text, f, width, per);
+        const uint32_t until = id(muse_since) + paged.cycle() + 10000;
+        if (paged.pages() > 1 && (int32_t) (until - id(muse_until)) > 0) id(muse_until) = until;
+      };
+
+      if (mode == 1) {
+        // A text from Muse, or a voice conversation: the question on top, the
+        // answer in the card, Muse or the weather icon on the left.
+        const bool conv = id(muse_conv);
+        const int icon = id(muse_icon);
+        it.image(12, 32, icon >= 0 && icon < muse::W_COUNT ? WX[icon] : id(muse_avatar));
+        std::string title = id(muse_title);
+        if (conv && !title.empty())
+          title = QUOTES ? "„" + title + "“" : "\"" + title + "\"";
+        auto head = muse::wrap(it, title, id(m_title), 206);
+        if (head.size() > 2) {
+          head.resize(2);
+          head[1] += MORE;
+        }
+        const int top = 68 - (int) head.size() * 12;
+        for (size_t k = 0; k < head.size(); k++)
+          it.print(96, top + 24 * (int) k, id(m_title), conv ? SUB : INK, TextAlign::TOP_LEFT, head[k].c_str(), BG);
+        muse::round_rect(it, 10, 110, 300, 124, 16, CARD, BG);
+        if (conv && id(muse_body).empty()) {
+          // Muse is still thinking: three dots that swell one after another.
+          for (int k = 0; k < 3; k++) {
+            float t = now / 600.0f - k * 0.18f;
+            t -= floorf(t);
+            const float swell = t < 0.5f ? t * 2 : (1 - t) * 2;
+            muse::circle(it, 136 + 24 * k, 172, 4.0f + 2.5f * swell, muse::mix(SUB, SHADOW, swell), CARD);
+          }
+          return;
+        }
+        layout(id(muse_body), id(m_body), 276, 5);
+        const int page = paged.page_at(shown);
+        paged.draw(it, page, 24, 118, 21, id(m_body), TXT, CARD);
+        muse::page_dots(it, 296, 226, paged.pages(), page, SUB, SHADOW, CARD);
+        return;
+      }
+      if (mode == 2) {
+        it.print(160, 42, id(m_label), SUB, TextAlign::TOP_CENTER, id(muse_label).c_str(), BG);
+        const int wv = muse::text_width(it, id(muse_value), id(m_value));
+        const int wu = id(muse_unit).empty() ? 0 : muse::text_width(it, id(muse_unit), id(m_unit)) + 8;
+        const int x = 160 - (wv + wu) / 2;
+        it.print(x, 128, id(m_value), INK, TextAlign::BASELINE_LEFT, id(muse_value).c_str(), BG);
+        if (wu > 0)
+          it.print(x + wv + 8, 128, id(m_unit), SUB, TextAlign::BASELINE_LEFT, id(muse_unit).c_str(), BG);
+        it.image(124, 150, id(muse_avatar));
+        return;
+      }
+      if (mode == 3) {
+        // Confetti plays once, then holds its last frame.
+        static uint32_t burst = 0;
+        auto *confetti = id(muse_confetti);
+        if (now - burst >= 160 &&
+            confetti->get_current_frame() + 1 < (int) confetti->get_animation_frame_count()) {
+          burst = now;
+          confetti->next_frame();
+        }
+        it.image(80, 22, confetti);
+        it.print(160, 186, id(m_title), INK, TextAlign::TOP_CENTER, id(muse_title).c_str(), BG);
+        auto body = muse::wrap(it, id(muse_body), id(m_body), 290);
+        if (!body.empty())
+          it.print(160, 212, id(m_body), SUB, TextAlign::TOP_CENTER, body[0].c_str(), BG);
+        return;
+      }
+      if (mode == 4) {
+        // Weather: big icon, temperature and condition, the forecast below.
+        const int icon = id(muse_icon);
+        if (icon >= 0 && icon < muse::LARGE_COUNT) it.image(8, 30, WX_LARGE[icon]);
+        else if (icon >= 0 && icon < muse::W_COUNT) it.image(24, 46, WX[icon]);
+        it.print(124, 92, id(m_value), INK, TextAlign::BASELINE_LEFT, id(muse_value).c_str(), BG);
+        auto label = muse::wrap(it, id(muse_label), id(m_label), 186);
+        if (!label.empty())
+          it.print(126, 102, id(m_label), SUB, TextAlign::TOP_LEFT, label[0].c_str(), BG);
+        muse::round_rect(it, 10, 140, 300, 94, 16, CARD, BG);
+        layout(id(muse_body), id(m_body), 276, 3);
+        const int page = paged.page_at(shown);
+        paged.draw(it, page, 24, 150, 21, id(m_body), TXT, CARD);
+        muse::page_dots(it, 296, 226, paged.pages(), page, SUB, SHADOW, CARD);
+        return;
+      }
+      // A photo, GIF or live view, or a route (muse_media.h) that did not come: the card
+      // becomes an event card with the reason, and the log says the same.
+      auto &md = muse::media::media();
+      if ((mode == 5 || mode == 9) && md.state.load() == muse::media::FAILED) {
+        std::string why;
+        xSemaphoreTake(md.lock, portMAX_DELAY);
+        why = md.error;
+        xSemaphoreGive(md.lock);
+        id(muse_body) = (id(muse_body).empty() || id(muse_body) == "Live" ? "" : id(muse_body) + "\n") +
+                        (mode == 9 ? "Route: " : "Bild: ") + why;
+        id(muse_mode) = 6;
+        id(muse_version)++;
+        ESP_LOGW("muse", "card %d becomes an event card: %s", mode, why.c_str());
+        return;
+      }
+      if (mode == 5) {
+        // A photo, GIF or live view with title and message below.
+        md.seen = now;
+        bool shown = false;
+        if (md.frames > 0 && xSemaphoreTake(md.lock, pdMS_TO_TICKS(20)) == pdTRUE) {
+          const auto &p = md.pic[md.front];
+          if (p.px != nullptr && p.w > 0) {
+            const int x = 160 - p.w / 2, y = 30 + (168 - p.h) / 2;
+            muse::fast_begin(it, id(s3_box_lcd));
+            muse::blit(it, p.px, p.w, p.h, x, y);
+            muse::fast_end();
+            muse::round_corners(it, x, y, p.w, p.h, 12, BG);
+            shown = true;
+          }
+          xSemaphoreGive(md.lock);
+        }
+        if (!shown) {
+          muse::round_rect(it, 10, 30, 300, 168, 14, CARD, BG);
+          it.image(124, 66, id(muse_avatar));
+          it.print(160, 150, id(m_small), SUB, TextAlign::TOP_CENTER, "Bild lädt …", CARD);
+        }
+        auto title = muse::wrap(it, id(muse_title), id(m_label), 292);
+        if (!title.empty())
+          it.print(14, 203, id(m_label), INK, TextAlign::TOP_LEFT, title[0].c_str(), BG);
+        auto body = muse::wrap(it, id(muse_body), id(m_small), 292);
+        if (!body.empty())
+          it.print(14, 223, id(m_small), id(muse_body) == "Live" ? Color(255, 59, 48) : SUB, TextAlign::TOP_LEFT,
+                   body[0].c_str(), BG);
+        return;
+      }
+      if (mode == 9) {
+        // A route: the map below the status bar, the way in blue, start green, destination
+        // red, the title above and distance and time below (muse_media.h, run_route).
+        md.seen = now;
+        bool shown = false;
+        float km = 0, mins = 0;
+        if (md.frames > 0 && xSemaphoreTake(md.lock, pdMS_TO_TICKS(20)) == pdTRUE) {
+          const auto &p = md.pic[md.front];
+          const auto &r = md.route;
+          if (p.px != nullptr && !r.empty()) {
+            muse::fast_begin(it, id(s3_box_lcd));
+            muse::blit(it, p.px, p.w, p.h, 0, muse::media::MAP_TOP);
+            const Color LINE(0, 122, 255);
+            for (size_t i = 1; i < r.size(); i++) muse::thick_line(it, r[i - 1].x, r[i - 1].y, r[i].x, r[i].y, 8, WHITE);
+            for (size_t i = 1; i < r.size(); i++) muse::thick_line(it, r[i - 1].x, r[i - 1].y, r[i].x, r[i].y, 4, LINE);
+            muse::fill_disc(it, r.front().x, r.front().y, 8, WHITE);
+            muse::fill_disc(it, r.front().x, r.front().y, 5.5f, Color(52, 199, 89));
+            muse::fill_disc(it, r.back().x, r.back().y, 8, WHITE);
+            muse::fill_disc(it, r.back().x, r.back().y, 5.5f, Color(255, 59, 48));
+            muse::fast_end();
+            km = md.distance_m / 1000.0f;
+            mins = md.duration_s / 60.0f;
+            shown = true;
+          }
+          xSemaphoreGive(md.lock);
+        }
+        if (!shown) {
+          muse::round_rect(it, 10, 34, 300, 196, 14, CARD, BG);
+          it.image(124, 70, id(muse_avatar));
+          it.print(160, 154, id(m_small), SUB, TextAlign::TOP_CENTER, "Route wird berechnet …", CARD);
+          return;
+        }
+        const Color PILL(255, 255, 255), EDGE(205, 205, 210);
+        // The tiles' attribution (OpenStreetMap asks for it on every map) sits bottom
+        // right beside the distance pill; when both do not fit side by side the pill
+        // stays centred and the attribution goes top right, beside a shorter title.
+        const char *credit = "\u00A9 OpenStreetMap";
+        const int aw = muse::text_width(it, credit, id(m_small)) + 16;
+        char dist[24], dur[24], info[64];
+        if (km < 1.0f) snprintf(dist, sizeof(dist), "%d m", (int) lroundf(km * 1000));
+        else snprintf(dist, sizeof(dist), "%.1f km", km);
+        for (char *c = dist; *c; c++) if (*c == '.') *c = ',';
+        if (mins < 60) snprintf(dur, sizeof(dur), "%d Min.", std::max(1, (int) lroundf(mins)));
+        else snprintf(dur, sizeof(dur), "%d Std. %d Min.", (int) (mins / 60), (int) lroundf(fmodf(mins, 60)));
+        snprintf(info, sizeof(info), "%s  \u00B7  %s", dist, dur);
+        const int iw = muse::text_width(it, info, id(m_label)) + 58;
+        const bool side_by_side = 10 + iw + 6 + aw + 10 <= 320;
+        const int ix = side_by_side ? 10 : 160 - iw / 2, ay = side_by_side ? 204 : 39;
+        if (!id(muse_title).empty()) {
+          const std::string t = muse::fit_line(id(muse_title), side_by_side ? 270 : 270 - aw - 8,
+                                               [&](const std::string &x) { return muse::text_width(it, x, id(m_label)); },
+                                               "\u2026");
+          const int tw = muse::text_width(it, t, id(m_label)) + 24;
+          muse::round_rect(it, 10, 36, tw, 28, 14, PILL, EDGE);
+          it.print(22, 50, id(m_label), INK, TextAlign::CENTER_LEFT, t.c_str(), PILL);
+        }
+        const char *icon = id(muse_label) == "bike" ? "\U000F00A3" : id(muse_label) == "foot" ? "\U000F0583" : "\U000F010B";
+        muse::round_rect(it, ix, 198, iw, 34, 17, PILL, EDGE);
+        it.print(ix + 14, 215, id(m_icons_s), INK, TextAlign::CENTER_LEFT, icon, PILL);
+        it.print(ix + 44, 215, id(m_label), INK, TextAlign::CENTER_LEFT, info, PILL);
+        muse::round_rect(it, 310 - aw, ay, aw, 22, 11, PILL, EDGE);
+        it.print(310 - aw + 8, ay + 11, id(m_small), INK, TextAlign::CENTER_LEFT, credit, PILL);
+        return;
+      }
+      if (mode == 6) {
+        // An event from the house: a coloured disc with its icon, title, message.
+        const auto &ev = muse::event(id(muse_event));
+        muse::circle(it, 160, 85, 42, SHADOW, BG);
+        muse::circle(it, 160, 82, 42, ev.color, BG);
+        it.print(160, 82, id(m_icons), WHITE, TextAlign::CENTER, ev.glyph, ev.color);
+        auto title = muse::wrap(it, id(muse_title), id(m_title), 296);
+        if (!title.empty())
+          it.print(160, 134, id(m_title), INK, TextAlign::TOP_CENTER, title[0].c_str(), BG);
+        layout(id(muse_body), id(m_body), 290, 3);
+        const int page = paged.page_at(shown);
+        paged.draw(it, page, 160, 162, 21, id(m_body), SUB, BG, TextAlign::TOP_CENTER);
+        muse::page_dots(it, 306, 232, paged.pages(), page, SUB, SHADOW, BG);
+        return;
+      }
+
+      if (mode == 10) {
+        // The day's appointments: a calendar sheet, title and count, four rows per page.
+        const auto &items = muse::agenda();
+        static const char *const DAYS[] = {"SO", "MO", "DI", "MI", "DO", "FR", "SA"};
+        const Color RED(255, 59, 48);
+        const int sx = 14, sy = 36, sw = 66, sh = 74;
+        muse::round_rect(it, sx, sy + 2, sw, sh, 12, SHADOW, BG);
+        muse::round_rect(it, sx, sy, sw, sh, 12, CARD, BG);
+        muse::round_rect(it, sx, sy, sw, 24, 12, RED, BG);
+        it.filled_rectangle(sx, sy + 12, sw, 12, RED);
+        if (clock.is_valid()) {
+          it.print(sx + sw / 2, sy + 12, id(m_small), WHITE, TextAlign::CENTER, DAYS[(clock.day_of_week + 6) % 7], RED);
+          char day[4];
+          snprintf(day, sizeof(day), "%d", clock.day_of_month);
+          it.print(sx + sw / 2, sy + 51, id(m_head), INK, TextAlign::CENTER, day, CARD);
+        }
+        it.print(96, 40, id(m_title), INK, TextAlign::TOP_LEFT, id(muse_title).c_str(), BG);
+        char count[32];
+        if (items.empty()) snprintf(count, sizeof(count), "Keine Termine");
+        else snprintf(count, sizeof(count), items.size() == 1 ? "1 Termin" : "%u Termine", (unsigned) items.size());
+        it.print(96, 68, id(m_label), SUB, TextAlign::TOP_LEFT, count, BG);
+        const int pages = std::max(1, (int) ((items.size() + 3) / 4));
+        const int page = pages > 1 ? (int) ((shown / 8000) % pages) : 0;
+        static const Color DOTS[] = {Color(0, 122, 255), Color(255, 149, 0), Color(52, 199, 89), Color(175, 82, 222),
+                                     Color(255, 45, 85)};
+        for (int k = 0; k < 4; k++) {
+          const size_t i = (size_t) page * 4 + k;
+          if (i >= items.size()) break;
+          const int y = 122 + k * 28;
+          muse::round_rect(it, 14, y + 3, 4, 20, 2, DOTS[i % 5], BG);
+          const std::string t = muse::fit_line(items[i].time, 84,
+                                               [&](const std::string &x) { return muse::text_width(it, x, id(m_label)); },
+                                               "\u2026");
+          it.print(26, y + 13, id(m_label), INK, TextAlign::CENTER_LEFT, t.c_str(), BG);
+          std::string what = items[i].title + (items[i].place.empty() ? "" : " \u00B7 " + items[i].place);
+          what = muse::fit_line(what, 200, [&](const std::string &x) { return muse::text_width(it, x, id(m_body)); },
+                                "\u2026");
+          it.print(114, y + 13, id(m_body), TXT, TextAlign::CENTER_LEFT, what.c_str(), BG);
+        }
+        muse::page_dots(it, 306, 232, pages, page, SUB, SHADOW, BG);
+        return;
+      }
+      if (mode == 8) {
+        // A question (muse_ask, muse_choose): two options beside Muse, three or four
+        // without Muse in two rows; the layout is muse::question_button, which the touch
+        // handler uses as well.
+        const auto &qs = muse::question();
+        const size_t n = qs.options.size();
+        std::vector<std::string> lines;
+        if (n <= 2) {
+          it.image(12, 40, id(muse_avatar));
+          lines = muse::wrap(it, id(muse_title), id(m_title), 206);
+          if (lines.size() > 4) {
+            lines.resize(4);
+            lines[3] += MORE;
+          }
+          const int top = 95 - (int) lines.size() * 12;
+          for (size_t k = 0; k < lines.size(); k++)
+            it.print(96, top + 24 * (int) k, id(m_title), INK, TextAlign::TOP_LEFT, lines[k].c_str(), BG);
+        } else {
+          lines = muse::wrap(it, id(muse_title), id(m_title), 296);
+          if (lines.size() > 4) {
+            lines.resize(4);
+            lines[3] += MORE;
+          }
+          const int top = 92 - (int) lines.size() * 12;
+          for (size_t k = 0; k < lines.size(); k++)
+            it.print(160, top + 24 * (int) k, id(m_title), INK, TextAlign::TOP_CENTER, lines[k].c_str(), BG);
+        }
+        static const Color CHOICE[] = {Color(0, 122, 255), Color(175, 82, 222), Color(48, 176, 199), Color(255, 149, 0)};
+        const Color YES(52, 199, 89), NO(142, 142, 147);
+        for (size_t i = 0; i < n && i < 4; i++) {
+          int bx, by, bw, bh;
+          muse::question_button(n, i, &bx, &by, &bw, &bh);
+          const bool yesno = qs.values.size() == 2 && qs.values[0] == "yes" && qs.values[1] == "no";
+          const Color c = yesno ? (i == 0 ? YES : NO) : CHOICE[i];
+          muse::round_rect(it, bx, by, bw, bh, bh / 2 > 18 ? 18 : bh / 2, c, BG);
+          const std::string t = muse::fit_line(qs.options[i], bw - 16,
+                                               [&](const std::string &x) { return muse::text_width(it, x, id(m_unit)); },
+                                               "…");
+          it.print(bx + bw / 2, by + bh / 2, id(m_unit), WHITE, TextAlign::CENTER, t.c_str(), c);
+        }
+        return;
+      }
+      if (mode == 11) {
+        // A timer: its name, a ring that empties, the time left; the card stays while the
+        // timer runs. With no timer left it gives way at once.
+        const auto *tm = muse::timer_soonest();
+        if (tm == nullptr) {
+          id(muse_next).execute();
+          return;
+        }
+        const uint32_t keep = now + 2500;
+        if ((int32_t) (keep - id(muse_until)) > 0) id(muse_until) = keep;
+        const std::string name = muse::fit_line(tm->name, 290,
+                                                [&](const std::string &x) { return muse::text_width(it, x, id(m_label)); },
+                                                "…");
+        it.print(160, 40, id(m_label), SUB, TextAlign::TOP_CENTER, name.c_str(), BG);
+        const Color RING(255, 149, 0);
+        muse::ring_arc(it, 160, 140, 74, 65, 0, 360, SHADOW, BG);
+        const float share = tm->total > 0 ? (float) tm->left / (float) tm->total : 0.0f;
+        if (share > 0.0f) muse::ring_arc(it, 160, 140, 74, 65, 0, 360.0f * share, RING, BG);
+        char left[12];
+        if (tm->left >= 3600)
+          snprintf(left, sizeof(left), "%u:%02u:%02u", (unsigned) tm->left / 3600, (unsigned) (tm->left / 60) % 60,
+                   (unsigned) tm->left % 60);
+        else
+          snprintf(left, sizeof(left), "%u:%02u", (unsigned) tm->left / 60, (unsigned) tm->left % 60);
+        it.print(160, 140, id(m_head), INK, TextAlign::CENTER, left, BG);
+        if (muse::timers().size() > 1) {
+          char more[24];
+          snprintf(more, sizeof(more), "+%u weitere", (unsigned) muse::timers().size() - 1);
+          it.print(160, 226, id(m_small), SUB, TextAlign::TOP_CENTER, more, BG);
+        }
+        return;
+      }
+      if (mode == 12) {
+        // The box about itself (a tap on the top bar): power, air, memory, what waits.
+        it.print(160, 36, id(m_title), INK, TextAlign::TOP_CENTER, "Muse Box 4.1.0", BG);
+        char line[6][64];
+        snprintf(line[0], 64, "%.2f V  ·  %d %%", id(battery_voltage).state, (int) id(battery_pct).state);
+        snprintf(line[1], 64, "%d dBm", (int) id(wifi_rssi).state);
+        snprintf(line[2], 64, "%.1f °C  ·  %.0f %%", id(box3_temperatur).state, id(box3_feuchte).state);
+        const uint32_t up = now / 1000;
+        snprintf(line[3], 64, "%u h %02u min", (unsigned) up / 3600, (unsigned) (up / 60) % 60);
+        snprintf(line[4], 64, "RAM %u KB  ·  PSRAM %u KB", (unsigned) heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024,
+                 (unsigned) heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024);
+        snprintf(line[5], 64, "%u warten  ·  %u zurück  ·  %u Timer", (unsigned) muse::queue().size(),
+                 (unsigned) muse::history().size(), (unsigned) muse::timers().size());
+        static const char *const LABELS[] = {"Akku", "WLAN", "Raum", "Läuft seit", "Frei", "Karten"};
+        for (int k = 0; k < 6; k++) {
+          const int y = 70 + k * 27;
+          it.print(16, y, id(m_small), SUB, TextAlign::TOP_LEFT, LABELS[k], BG);
+          it.print(304, y - 2, id(m_body), TXT, TextAlign::TOP_RIGHT, line[k], BG);
+        }
+        return;
+      }
+      if (mode == 13) {
+        // A list with ticks: the title, how many are done, five rows per page.
+        const auto &items = muse::list_items();
+        const Color DISC(48, 176, 199), DONE(52, 199, 89);
+        muse::circle(it, 40, 58, 24, DISC, BG);
+        it.print(40, 58, id(m_icons_s), WHITE, TextAlign::CENTER, "\U000F0756", DISC);  // format-list-checks
+        it.print(78, 40, id(m_title), INK, TextAlign::TOP_LEFT, id(muse_title).c_str(), BG);
+        size_t done = 0;
+        for (const auto &li : items) done += li.done ? 1 : 0;
+        char count[40];
+        if (items.empty()) snprintf(count, sizeof(count), "Nichts drauf");
+        else snprintf(count, sizeof(count), "%u von %u erledigt", (unsigned) done, (unsigned) items.size());
+        it.print(78, 66, id(m_label), SUB, TextAlign::TOP_LEFT, count, BG);
+        const int pages = std::max(1, (int) ((items.size() + 4) / 5));
+        const int page = pages > 1 ? (int) ((shown / 8000) % pages) : 0;
+        for (int k = 0; k < 5; k++) {
+          const size_t i = (size_t) page * 5 + k;
+          if (i >= items.size()) break;
+          const int y = 104 + k * 26;
+          // checkbox-marked-circle in green when done, checkbox-blank-circle-outline else
+          if (items[i].done) it.print(26, y, id(m_icons_s), DONE, TextAlign::CENTER, "\U000F0133", BG);
+          else it.print(26, y, id(m_icons_s), SUB, TextAlign::CENTER, "\U000F0130", BG);
+          const std::string t = muse::fit_line(items[i].text, 262,
+                                               [&](const std::string &x) { return muse::text_width(it, x, id(m_body)); },
+                                               "…");
+          it.print(44, y, id(m_body), items[i].done ? SUB : TXT, TextAlign::CENTER_LEFT, t.c_str(), BG);
+        }
+        muse::page_dots(it, 306, 232, pages, page, SUB, SHADOW, BG);
+        return;
+      }
+      // Status: the animation for Muse's state plays forwards and backwards, so
+      // a short loop never jumps; about 6 frames per second like the source.
+      const int state = id(muse_state);
+      esphome::animation::Animation *anim = id(muse_idle);
+      if (state == 1 || state == 6) anim = id(muse_wave);
+      else if (state == 2) anim = id(muse_working);
+      else if (state == 3) anim = id(muse_making);
+      static esphome::animation::Animation *last = nullptr;
+      static int direction = 1;
+      static uint32_t step = 0;
+      if (anim != last) {
+        anim->set_frame(0);
+        direction = 1;
+        last = anim;
+        step = now;
+      } else if (now - step >= 160) {
+        step = now;
+        const int frames = anim->get_animation_frame_count();
+        int f = anim->get_current_frame() + direction;
+        if (f >= frames) { direction = -1; f = frames - 2; }
+        if (f < 0) { direction = 1; f = 1; }
+        anim->set_frame(f);
+      }
+      // Cuddled (a tap on the ready screen): Muse wiggles and hearts rise for 2.6 s.
+      const int32_t cuddle = (int32_t) (id(muse_cuddle_until) - now);
+      const int wiggle = cuddle > 0 ? (int) lroundf(4.0f * sinf(now / 70.0f)) : 0;
+      it.image(80 + wiggle, 30, anim);
+      if (cuddle > 0) {
+        static const muse::scene::Item HEARTS = [] {
+          muse::scene::Item h;
+          h.kind = muse::scene::PARTICLES;
+          h.sub = muse::scene::P_BUBBLES;
+          h.count = 9;
+          h.glyph = muse::scene::icon_codepoint("heart");
+          h.has_color = true;
+          h.color = muse::scene::Rgb{255, 45, 85};
+          h.x = 90;
+          h.y = 34;
+          h.w = 140;
+          h.h = 150;
+          h.size = 0;
+          h.speed = 2.2f;
+          return h;
+        }();
+        const float fade = cuddle < 600 ? cuddle / 600.0f : 1.0f;
+        muse::scene_particles(it, HEARTS, 4242, (uint32_t) (2600 - cuddle), 0, 0, fade, ASSETS,
+                              [&](float, float) { return BG; });
+      }
+
+      struct Pill { const char *text; Color color; };
+      static const Pill PILLS[] = {
+        {"Bereit", Color(52, 199, 89)},
+        {"Ich höre zu …", Color(10, 132, 255)},
+        {"Ich denke nach …", Color(255, 159, 10)},
+        {"Ich antworte …", Color(191, 90, 242)},
+        {"Da ging etwas schief", Color(255, 69, 58)},
+        {"Ruhe", Color(142, 142, 147)},
+        {"Hallo!", Color(48, 176, 199)},
+      };
+      const Pill &pill = PILLS[(state >= 0 && state <= 6) ? state : 0];
+
+      // A label from muse_set_status_text replaces the pill's default text while the
+      // status stays. Any other way to a new status (voice assistant, greeting,
+      // error, muse_set_status) drops it, so it cannot come back with the same status later.
+      static int label_state = -1;
+      if (state != label_state) {
+        if (state != id(muse_status_text_state)) id(muse_status_text) = "";
+        label_state = state;
+      }
+      // One line, at most 254 px: with the 42 px around the text that is a pill of
+      // 296 px, 12 px from each edge. The cut is worked out when the label changes.
+      static std::string fit_from, fit_to;
+      std::string label = pill.text;
+      bool custom = false;
+      if (!id(muse_status_text).empty() && state == id(muse_status_text_state)) {
+        if (fit_from != id(muse_status_text)) {
+          fit_from = id(muse_status_text);
+          fit_to = muse::fit_line(fit_from, 254,
+                                  [&](const std::string &s) { return muse::text_width(it, s, id(m_status)); },
+                                  id(m_status)->find_glyph(0x2026) != nullptr ? "\u2026" : "...");
+        }
+        label = fit_to;
+        custom = true;
+      }
+      // The mute switch on top cuts the microphones: say so while Muse is idle.
+      if (!custom && state == 0 && id(mute_switch).state) label = "Mikrofon aus";
+      static std::string logged;
+      if (label != logged) {
+        logged = label;
+        ESP_LOGI("muse", "status pill: \"%s\"%s, %d px", label.c_str(), custom ? " (own label)" : "",
+                 muse::text_width(it, label, id(m_status)));
+      }
+
+      const int w = muse::text_width(it, label, id(m_status)) + 42;
+      const int px = 160 - w / 2;
+      muse::round_rect(it, px, 203, w, 30, 15, SHADOW, BG);
+      muse::round_rect(it, px, 201, w, 30, 15, CARD, BG);
+      muse::circle(it, px + 18, 216, 4.5f, pill.color, CARD);
+      it.print(px + 30, 216, id(m_status), TXT, TextAlign::CENTER_LEFT, label.c_str(), CARD);
+
+# =============================================================================
+# TOUCHSCREEN
+# =============================================================================
+# MUSE 3.2 (07.10.2026): the GT911 on the audio bus (0x5D, "911" in muse_hw_check).
+# Tap on a card: the next card in line. Long press on a card: every card gone. Tap on
+# the ready screen: Muse is cuddled. Long press there: Muse listens, unless the mute
+# switch is on. On a question the two buttons answer (muse_ask).
+touchscreen:
+  - platform: gt911
+    id: box_touch
+    i2c_id: bus_a
+    display: s3_box_lcd
+    interrupt_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
+    on_touch:
+      - lambda: |-
+          id(touch_x) = touch.x;
+          id(touch_y) = touch.y;
+          id(last_x) = touch.x;
+          id(last_y) = touch.y;
+          id(touch_at) = millis();
+    on_update:
+      - lambda: |-
+          if (!touches.empty()) {
+            id(last_x) = touches[0].x;
+            id(last_y) = touches[0].y;
+          }
+    on_release:
+      - lambda: |-
+          id(touch_action) = 0;
+          const uint32_t held = millis() - id(touch_at);
+          const int x0 = id(touch_x), y0 = id(touch_y), x1 = id(last_x), y1 = id(last_y);
+          const int dx = x1 - x0, dy = y1 - y0, mode = id(muse_mode);
+          const bool swipe_left = dx < -60 && abs(dx) > 2 * abs(dy);
+          const bool swipe_right = dx > 60 && abs(dx) > 2 * abs(dy);
+          const bool swipe_down = dy > 60 && abs(dy) > 2 * abs(dx);
+          ESP_LOGI("muse", "touch %d, %d -> %d, %d for %u ms on mode %d", x0, y0, x1, y1, (unsigned) held, mode);
+          if (mode == 8) {  // only the buttons answer
+            auto &qs = muse::question();
+            const int i = muse::question_button_at(qs.options.size(), x1, y1);
+            if (i < 0) return;
+            qs.answer = qs.values[i];
+            qs.open = false;
+            muse::give_answer(qs.answer);
+            id(muse_answer).publish_state(qs.answer + ": " + qs.text);
+            ESP_LOGI("muse", "answer \"%s\" to \"%s\"", qs.answer.c_str(), qs.text.c_str());
+            id(muse_next).execute();
+            return;
+          }
+          if (mode == 7 && held < 700) {  // a button in a scene
+            const auto &sc = muse::scene::current();
+            const uint32_t t = millis() - id(muse_since);
+            const int i = muse::scene::button_at(sc, x1, y1, t, sc.frame_at(t));
+            if (i >= 0) {
+              const std::string a = sc.items[i].text;
+              muse::give_answer(a);
+              id(muse_answer).publish_state(a + ": Szene");
+              ESP_LOGI("muse", "scene button \"%s\"", a.c_str());
+              id(muse_next).execute();
+              return;
+            }
+          }
+          if (swipe_down) {
+            if (mode != 0) {
+              ESP_LOGI("muse", "swipe down: every card gone, %u dropped", (unsigned) muse::queue().size());
+              muse::queue().clear();
+              id(muse_next).execute();
+            }
+            return;
+          }
+          if (swipe_right) {
+            id(muse_prev).execute();
+            return;
+          }
+          if (swipe_left) {
+            if (mode != 0) id(muse_next).execute();
+            return;
+          }
+          if (held >= 700) {
+            if (mode != 0) {
+              muse::queue().clear();
+              id(muse_next).execute();
+              ESP_LOGI("muse", "long press: every card gone");
+            } else if (!id(mute_switch).state && !id(va).is_running()) {
+              id(touch_action) = 4;
+            }
+            return;
+          }
+          if (y0 < 30 && mode != 12) {  // the top bar: the box about itself
+            muse::Card c;
+            c.mode = 12;
+            c.title = "Muse-Box";
+            c.ms = 15000;
+            muse::enqueue(c, muse::NOW, mode);
+            id(muse_next).execute();
+            return;
+          }
+          if (mode != 0) {
+            id(muse_next).execute();
+            return;
+          }
+          id(muse_cuddle_until) = millis() + 2600;
+          id(muse_greet).execute();
+          ESP_LOGI("muse", "cuddled");
+      - if:
+          condition:
+            lambda: 'return id(touch_action) == 4;'
+          then:
+            - logger.log:
+                tag: muse
+                level: INFO
+                format: "long press: Muse listens"
+            - micro_wake_word.stop
+            - voice_assistant.start
+
+# =============================================================================
+# DISPLAY UPDATE TRIGGER
+# =============================================================================
+
+interval:
+  - interval: 100ms
+    then:
+      - component.update: s3_box_lcd
+
+  # MUSE: the backlight follows the time of day (muse::brightness).
+  - interval: 60s
+    then:
+      - script.execute: muse_brightness
+
+# =============================================================================
+# LIGHT
+# =============================================================================
+
+output:
+  - platform: ledc
+    pin: GPIO47
+    id: backlight_output
+
+light:
+  - platform: monochromatic
+    id: led
+    name: "Backlight"
+    output: backlight_output
+    restore_mode: ALWAYS_ON
+
+# =============================================================================
+# SENSORS
+# =============================================================================
+
+script:
+  # MUSE 3.2: puts the next card of the line on screen, or the status when none waits
+  # (muse.h "queue"). A question that leaves the screen unanswered is answered "none".
+  # MUSE 3.2/4.0: puts the card in muse::staged() on screen (muse.h "queue").
+  - id: muse_apply
+    then:
+      - lambda: |-
+          const muse::Card c = muse::staged();
+          muse::current_card() = c;
+          id(muse_title) = c.title;
+          id(muse_body) = c.body;
+          id(muse_label) = c.label;
+          id(muse_value) = c.value;
+          id(muse_unit) = c.unit;
+          id(muse_event) = c.event;
+          id(muse_icon) = c.icon;
+          id(muse_conv) = false;
+          id(muse_mode) = c.mode;
+          id(muse_version)++;
+          id(muse_since) = millis();
+          id(muse_until) = millis() + c.ms;
+          if (c.mode == 3) id(muse_confetti)->set_frame(0);
+          if (c.mode == 7) muse::scene::current() = muse::scene::parse(c.scene);
+          if (c.mode == 5) {
+            muse::media::Job j;
+            j.kind = c.live_s > 0 ? muse::media::LIVE : muse::media::PHOTO;
+            j.url = c.url;
+            j.seconds = c.live_s;
+            muse::media::submit(j);
+          }
+          if (c.mode == 10) muse::agenda() = muse::parse_agenda(c.body);
+          if (c.mode == 13) muse::list_items() = muse::parse_list(c.body);
+          if (c.mode == 9) {
+            id(muse_label) = c.profile;
+            muse::media::Job j;
+            j.kind = muse::media::ROUTE;
+            j.from = c.from;
+            j.to = c.to;
+            j.profile = c.profile;
+            muse::media::submit(j);
+          }
+          ESP_LOGI("muse", "card %d on screen, %u waiting, %u back", c.mode, (unsigned) muse::queue().size(),
+                   (unsigned) muse::history().size());
+      - script.execute: muse_brightness
+  # The next card of the line, or the status when none waits. A question that leaves the
+  # screen unanswered is answered "none".
+  - id: muse_next
+    mode: queued
+    then:
+      - lambda: |-
+          auto &qs = muse::question();
+          if (qs.open && id(muse_mode) == 8) {
+            qs.open = false;
+            qs.answer = "none";
+            id(muse_answer).publish_state("none: " + qs.text);
+          }
+          if (!muse::take_next(id(muse_mode))) {
+            id(muse_mode) = 0;
+            id(muse_title) = "";
+            muse::current_card() = muse::Card{};
+            return;
+          }
+          id(muse_apply).execute();
+  # The card before (a swipe to the right); the one on screen goes back to the front.
+  - id: muse_prev
+    mode: queued
+    then:
+      - lambda: |-
+          auto &qs = muse::question();
+          if (qs.open && id(muse_mode) == 8) {
+            qs.open = false;
+            qs.answer = "none";
+            id(muse_answer).publish_state("none: " + qs.text);
+          }
+          if (!muse::take_prev(id(muse_mode))) {
+            ESP_LOGI("muse", "nothing to go back to");
+            return;
+          }
+          id(muse_apply).execute();
+  # MUSE 4.0: the timer card, in front of everything else; it stays while its timer runs.
+  - id: muse_timer_card
+    mode: queued
+    then:
+      - lambda: |-
+          const auto *t = muse::timer_soonest();
+          if (t == nullptr) return;
+          if (id(muse_mode) == 11) {
+            id(muse_version)++;
+            return;
+          }
+          muse::Card c;
+          c.mode = 11;
+          c.title = t->name;
+          c.ms = t->left * 1000 + 3000;
+          muse::enqueue(c, muse::NOW, id(muse_mode));
+          id(muse_next).execute();
+  # MUSE 4.0: a timer ended: the chime, and a card that says which one, for 30 s.
+  - id: muse_timer_done
+    mode: queued
+    then:
+      - lambda: |-
+          muse::Card c;
+          c.mode = 6;
+          c.event = "timer";
+          c.title = "Zeit ist um";
+          c.body = id(muse_timer_name).empty() ? std::string("Timer") : id(muse_timer_name);
+          c.ms = 30000;
+          if (id(muse_mode) == 11 && muse::timer_soonest() == nullptr) id(muse_mode) = 0;
+          muse::enqueue(c, muse::NOW, id(muse_mode));
+          id(muse_next).execute();
+          ESP_LOGI("muse", "timer ended: %s", c.body.c_str());
+      - media_player.speaker.play_on_device_media_file:
+          media_file: snd_timer
+          announcement: true
+  # MUSE 3.2: sets the two audio chips up until they answer right. At
+  # boot both fail although they answer on the bus; a later try works (07.10.2026). Then
+  # the speaker starts and keeps running: starting it with the amplifier already on made
+  # a click before the first sound.
+  - id: audio_init
+    mode: single
+    then:
+      - repeat:
+          count: 6
+          then:
+            - lambda: |-
+                if (id(audio_ok)) return;
+                id(audio_tries)++;
+                id(es8311_dac)->setup();
+                id(es7210_adc)->setup();
+                const std::string d = muse::reg_read(id(bus_a), 0x18, 0x00, false, 1);
+                const std::string a = muse::reg_read(id(bus_a), 0x40, 0x40, false, 1);
+                id(audio_ok) = d == "80" && a == "C3";
+                ESP_LOGI("muse", "audio chips, try %d: es8311 %s (80), es7210 %s (C3)", id(audio_tries), d.c_str(),
+                         a.c_str());
+            - delay: 2s
+      - lambda: |-
+          if (id(audio_ok)) id(box_speaker)->start();
+          else ESP_LOGE("muse", "audio chips did not come up after %d tries", id(audio_tries));
+  # MUSE: backlight 100 % by day, 80 % in the evening, 65 % from 23:00, 10 % quiet.
+  - id: muse_brightness
+    mode: restart
+    then:
+      - lambda: |-
+          // Night calm (switch): dark between 23:00 and 06:00 when nobody has been seen for
+          // 10 minutes and nothing is on screen.
+          const auto t = id(ha_time).now();
+          const bool night = t.is_valid() && (t.hour >= 23 || t.hour < 6);
+          const bool nobody = !id(radar_presence).state && (millis() - id(radar_off_since)) > 600000;
+          const bool calm = id(night_calm).state && night && nobody && id(muse_mode) == 0;
+          const float level = (id(muse_screen_off) || calm)
+                                  ? 0.0f
+                                  : muse::brightness(t, id(ha_sun).state, id(muse_state) == 5);
+          if (fabsf(level - id(muse_level)) < 0.01f) return;
+          id(muse_level) = level;
+          if (level <= 0.0f) {
+            auto off = id(led).turn_off();
+            off.set_transition_length(500);
+            off.perform();
+            return;
+          }
+          auto call = id(led).turn_on();
+          call.set_brightness(level);
+          call.set_transition_length(3000);
+          call.perform();
+  # MUSE: waves once when someone steps in front of the box.
+  - id: muse_greet
+    mode: restart
+    then:
+      - lambda: 'if (id(muse_state) == 0) id(muse_state) = 6;'
+      - delay: 4s
+      - lambda: 'if (id(muse_state) == 6) id(muse_state) = 0;'
+  # MUSE: an error shows for 6 s, then Muse is ready again.
+  - id: muse_error_reset
+    mode: restart
+    then:
+      - delay: 6s
+      - lambda: 'if (id(muse_state) == 4) id(muse_state) = 0;'
+# =============================================================================
+# AUDIO
+# =============================================================================
+
+i2s_audio:
+  - id: i2s_audio_bus
+    i2s_lrclk_pin:
+      number: GPIO45
+      ignore_strapping_warning: true
+    i2s_bclk_pin: GPIO17
+    i2s_mclk_pin: GPIO2
+
+# MUSE 3.2 (07.10.2026): audio as in ESPHome's own BOX-3 voice assistant. Both chips are
+# set up over I2C (bus_a), the amplifier is switched on (GPIO46, switch below), and a
+# media player plays sounds and music from Home Assistant, Music Assistant or a URL.
+# The voice assistant speaks through the same player. The mixer lays an announcement
+# over music; the resamplers bring every source to the 48 kHz of the speaker.
+audio_adc:
+  - platform: es7210
+    id: es7210_adc
+    i2c_id: bus_a
+    bits_per_sample: 16bit
+    sample_rate: 16000
+
+audio_dac:
+  - platform: es8311
+    id: es8311_dac
+    i2c_id: bus_a
+    bits_per_sample: 16bit
+    sample_rate: 48000
+
+microphone:
+  - platform: i2s_audio
+    id: box_mic
+    i2s_audio_id: i2s_audio_bus
+    i2s_din_pin: GPIO16
+    adc_type: external
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+speaker:
+  - platform: i2s_audio
+    id: box_speaker
+    i2s_audio_id: i2s_audio_bus
+    i2s_dout_pin: GPIO15
+    dac_type: external
+    audio_dac: es8311_dac
+    sample_rate: 48000
+    bits_per_sample: 16bit
+    channel: mono
+    buffer_duration: 100ms
+    timeout: never
+  - platform: mixer
+    id: mixing_speaker
+    output_speaker: box_speaker
+    num_channels: 1
+    source_speakers:
+      - id: announcement_mixing_input
+        timeout: never
+      - id: media_mixing_input
+        timeout: never
+  - platform: resampler
+    id: announcement_resampling_speaker
+    output_speaker: announcement_mixing_input
+  - platform: resampler
+    id: media_resampling_speaker
+    output_speaker: media_mixing_input
+
+media_player:
+  - platform: speaker
+    id: muse_player
+    name: "Speaker"
+    volume_initial: 0.6
+    volume_min: 0.3
+    volume_max: 0.9
+    task_stack_in_psram: true
+    # MUSE 4.0: the box's own sounds, generated by make_muse_sounds.py (16 kHz mono WAV).
+    files:
+      - id: snd_timer
+        file: sounds/timer.wav
+      - id: snd_ask
+        file: sounds/ask.wav
+    announcement_pipeline:
+      speaker: announcement_resampling_speaker
+      format: FLAC
+      num_channels: 1
+      sample_rate: 48000
+    media_pipeline:
+      speaker: media_resampling_speaker
+      format: FLAC
+      num_channels: 1
+      sample_rate: 48000
+    on_announcement:
+      # An announcement over music: the music steps back by 20 dB until it is done.
+      - mixer_speaker.apply_ducking:
+          id: media_mixing_input
+          decibel_reduction: 20
+          duration: 0.0s
+    on_state:
+      - if:
+          condition:
+            and:
+              - not:
+                  media_player.is_announcing: muse_player
+          then:
+            - mixer_speaker.apply_ducking:
+                id: media_mixing_input
+                decibel_reduction: 0
+                duration: 1.0s
+
+# =============================================================================
+# VOICE ASSISTANT
+# =============================================================================
+
+micro_wake_word:
+  id: mww
+  models:
+    - model: okay_nabu
+    - model: hey_mycroft
+    # The open hey_jarvis model under the display name "Muse": the box listens
+    # for the spoken words "Hey Jarvis" (wakewords/README.md says why).
+    - model: wakewords/muse_hey_jarvis.json
+    - model: alexa
+  on_wake_word_detected:
+    - lambda: |-
+        id(muse_state) = 1;
+        id(muse_mode) = 0;
+    - micro_wake_word.stop
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+
+voice_assistant:
+  id: va
+  microphone: box_mic
+  media_player: muse_player
+  micro_wake_word: mww
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 4.0
+  # MUSE 4.0: timers set by voice ("Timer 5 Minuten") count in Home Assistant; the box
+  # shows them on the timer card and plays the chime when one ends (muse.h "timers").
+  on_timer_started:
+    - lambda: |-
+        muse::timer_remove(timer.id);
+        muse::TimerEntry e;
+        e.id = timer.id;
+        e.name = timer.name.empty() ? std::string("Timer") : timer.name;
+        e.total = timer.total_seconds;
+        e.left = timer.seconds_left;
+        muse::timers().push_back(e);
+        ESP_LOGI("muse", "voice timer started: %s, %u s", e.name.c_str(), (unsigned) e.total);
+    - script.execute: muse_timer_card
+  on_timer_updated:
+    - lambda: |-
+        for (auto &e : muse::timers())
+          if (e.id == timer.id) {
+            e.total = timer.total_seconds;
+            e.left = timer.seconds_left;
+            if (!timer.name.empty()) e.name = timer.name;
+          }
+    - script.execute: muse_timer_card
+  on_timer_cancelled:
+    - lambda: |-
+        muse::timer_remove(timer.id);
+        ESP_LOGI("muse", "voice timer cancelled: %s", timer.name.c_str());
+  on_timer_finished:
+    - lambda: |-
+        muse::timer_remove(timer.id);
+        id(muse_timer_name) = timer.name.empty() ? std::string("Timer") : timer.name;
+    - script.execute: muse_timer_done
+  on_timer_tick:
+    - lambda: |-
+        for (const auto &t : timers)
+          for (auto &e : muse::timers())
+            if (e.id == t.id) {
+              e.left = t.seconds_left;
+              e.total = t.total_seconds;
+            }
+  # MUSE v3: the question appears as soon as speech-to-text is done, the answer
+  # as soon as text-to-speech starts (Home Assistant sends no text earlier).
+  on_listening:
+    - lambda: |-
+        id(muse_state) = 1;
+        id(muse_mode) = 0;
+  on_stt_end:
+    - lambda: |-
+        id(muse_state) = 2;
+        auto q = muse::clean(x, id(m_title));
+        if (!q.text.empty()) {
+          // A card on screen waits until the conversation is over (muse.h "queue").
+          if (id(muse_mode) != 0 && id(muse_mode) != 8 && !id(muse_conv))
+            muse::queue().push_front(muse::current_card());
+          muse::current_card() = muse::Card{};
+          muse::current_card().conv = true;
+          id(muse_title) = q.text;
+          id(muse_body) = "";
+          id(muse_icon) = muse::W_NONE;
+          id(muse_conv) = true;
+          id(muse_mode) = 1;
+          id(muse_version)++;
+          id(muse_since) = millis();
+          id(muse_until) = millis() + 60000;
+        }
+    - micro_wake_word.start
+  on_tts_start:
+    - lambda: |-
+        // An announcement without a question keeps no stale question on top.
+        if (!(id(muse_conv) && id(muse_mode) == 1 && id(muse_state) == 2)) {
+          id(muse_title) = "";
+          if (id(muse_mode) != 0 && id(muse_mode) != 8 && !id(muse_conv))
+            muse::queue().push_front(muse::current_card());
+          muse::current_card() = muse::Card{};
+          muse::current_card().conv = true;
+        }
+        id(muse_state) = 3;
+        auto a = muse::clean(x, id(m_body));
+        id(muse_body) = a.text;
+        id(muse_icon) = a.icon;
+        id(muse_conv) = true;
+        id(muse_mode) = 1;
+        id(muse_version)++;
+        id(muse_since) = millis();
+        id(muse_until) = millis() + 60000;
+  on_end:
+    - lambda: |-
+        if (id(muse_state) != 4) id(muse_state) = 0;
+        // The answer stays at least 20 s after Muse stopped speaking.
+        if (id(muse_mode) == 1 && id(muse_conv)) {
+          const uint32_t keep = millis() + 20000;
+          if ((int32_t) (keep - id(muse_until)) > 0) id(muse_until) = keep;
+        }
+    - micro_wake_word.start
+  on_error:
+    - lambda: |-
+        id(muse_state) = 4;
+        id(muse_mode) = 0;
+    - script.execute: muse_error_reset
+
+switch:
+  # MUSE 4.0: with this on, the display goes dark between 23:00 and 06:00 once the radar
+  # has seen nobody for 10 minutes; anyone arriving, a card or a timer wakes it. Off by
+  # default, so the night brightness of the schedule stays unless the owner switches it on.
+  - platform: template
+    id: night_calm
+    name: "Night Calm Display"
+    icon: mdi:weather-night
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    on_turn_on:
+      - script.execute: muse_brightness
+    on_turn_off:
+      - script.execute: muse_brightness
+  # MUSE 3.2: the speaker amplifier (PA_CTRL). Off by default after a reset, so the box
+  # made no sound before 3.2.
+  - platform: gpio
+    id: speaker_amp
+    internal: true
+    pin:
+      number: GPIO46
+      ignore_strapping_warning: true
+    restore_mode: ALWAYS_ON
+

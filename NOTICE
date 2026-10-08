@@ -1,0 +1,24 @@
+Muse ESP32BoxS3 Toy
+Copyright 2026 LeopardCode.AI (Dr.-Ing. Alexander Brunker)
+
+Licensed under the Apache License, Version 2.0 (LICENSE).
+
+This project bundles or fetches work of others, each under its own licence:
+
+- AnimatedGIF 2.2.3 by Larry Bank, BitBank Software (firmware/muse_gif/), Apache 2.0,
+  with two small replacements for Arduino's millis() and delay() on ESP-IDF.
+- JPEGDEC by Larry Bank and pngle by kikuchan, fetched by ESPHome at build time
+  (Apache 2.0 and MIT).
+- Material Design Icons 7.4.47 by Pictogrammers, fetched at build time (Apache 2.0).
+- Meteocons 2.0.0 by Bas Milius (firmware/icons/), MIT, licence file beside them.
+- Inter by Rasmus Andersson, fetched from Google Fonts at build time (SIL OFL 1.1).
+- The hey_jarvis microWakeWord model by Kevin Ahrendt (firmware/wakewords/), Apache 2.0.
+- ESPHome and ESP-IDF, Apache 2.0.
+- Map tiles from the server named in the substitution `map_tiles` (tile.openstreetmap.org by
+  default; OpenStreetMap contributors, ODbL) and routes from
+  routing.openstreetmap.de (FOSSGIS e.V.), used at run time under their usage policies.
+
+"Muse" is Meta's assistant and trademark. This project is not affiliated with, endorsed
+by or supported by Meta. The character animations of the Muse app are Meta's artwork:
+they are not part of this repository and must not be redistributed; the repository ships
+a placeholder character instead.

@@ -1,0 +1,398 @@
+# Optional package: a Samsung TV remote through the sensor dock's IR diode and receiver.
+# Include it from muse-box.yaml (`packages:`) or leave it out. The 49 codes are the
+# common Samsung ones; `tv_key` sends one three times, the receiver reports what the
+# original remote sends, so new codes can be learned in Home Assistant.
+api:
+  # One action instead of forty button entities. From Home Assistant:
+  #   action: esphome.muse_box_tv_key
+  #   data: {key: hdmi}
+  actions:
+    - action: tv_key
+      variables:
+        key: string
+      then:
+        - lambda: |-
+            static const std::map<std::string, uint32_t> CODES = {
+              {"power", 0xE0E040BF},
+              {"power_on", 0xE0E09966},
+              {"power_off", 0xE0E019E6},
+              {"volume_up", 0xE0E0E01F},
+              {"volume_down", 0xE0E0D02F},
+              {"mute", 0xE0E0F00F},
+              {"channel_up", 0xE0E048B7},
+              {"channel_down", 0xE0E008F7},
+              {"channel_list", 0xE0E0D629},
+              {"pre_ch", 0xE0E0C838},
+              {"source", 0xE0E0807F},
+              {"hdmi", 0xE0E0D12E},
+              {"tv", 0xE0E0D827},
+              {"menu", 0xE0E058A7},
+              {"home", 0xE0E09E61},
+              {"tools", 0xE0E0D22D},
+              {"info", 0xE0E0F807},
+              {"guide", 0xE0E0F20D},
+              {"up", 0xE0E006F9},
+              {"down", 0xE0E08679},
+              {"left", 0xE0E0A659},
+              {"right", 0xE0E046B9},
+              {"enter", 0xE0E016E9},
+              {"back", 0xE0E01AE5},
+              {"exit", 0xE0E0B44B},
+              {"play", 0xE0E0E21D},
+              {"pause", 0xE0E052AD},
+              {"stop", 0xE0E0629D},
+              {"rewind", 0xE0E0A25D},
+              {"forward", 0xE0E012ED},
+              {"record", 0xE0E0926D},
+              {"red", 0xE0E036C9},
+              {"green", 0xE0E028D7},
+              {"yellow", 0xE0E0A857},
+              {"blue", 0xE0E06897},
+              {"subtitle", 0xE0E0A45B},
+              {"sleep", 0xE0E0C03F},
+              {"picture_size", 0xE0E07C83},
+              {"e_manual", 0xE0E0FC03},
+              {"num_0", 0xE0E08877},
+              {"num_1", 0xE0E020DF},
+              {"num_2", 0xE0E0A05F},
+              {"num_3", 0xE0E0609F},
+              {"num_4", 0xE0E010EF},
+              {"num_5", 0xE0E0906F},
+              {"num_6", 0xE0E050AF},
+              {"num_7", 0xE0E030CF},
+              {"num_8", 0xE0E0B04F},
+              {"num_9", 0xE0E0708F},
+            };
+            auto it = CODES.find(key);
+            id(ir_send) = (it == CODES.end()) ? 0 : it->second;
+            if (it == CODES.end())
+              ESP_LOGW("tv_key", "unknown key: %s", key.c_str());
+        - if:
+            condition:
+              lambda: 'return id(ir_send) != 0;'
+            then:
+              - remote_transmitter.transmit_samsung:
+                  data: !lambda 'return id(ir_send);'
+                  repeat:
+                    times: 3
+
+globals:
+  - id: ir_send
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+text_sensor:
+  # The last received Samsung code and its name, visible in Home Assistant.
+  - platform: template
+    name: "IR Code"
+    id: ir_code
+    icon: mdi:remote
+  - platform: template
+    name: "IR Key"
+    id: ir_taste
+    icon: mdi:gesture-tap-button
+
+remote_receiver:
+  pin:
+    number: GPIO38
+    # A TSOP receiver idles HIGH and pulls low on a pulse; without `inverted`
+    # ESPHome sees a permanent signal and never decodes anything.
+    inverted: true
+    mode:
+      input: true
+      pullup: true
+  dump: all
+  tolerance: 25%
+  buffer_size: 2kb
+  idle: 25ms
+  # Every received Samsung code goes to the two text sensors below, so the
+  # original remote can be read along in Home Assistant.
+  on_samsung:
+    - lambda: |-
+        static const std::map<uint32_t, std::string> NAMEN = {
+              {0xE0E040BF, "power"},
+              {0xE0E09966, "power_on"},
+              {0xE0E019E6, "power_off"},
+              {0xE0E0E01F, "volume_up"},
+              {0xE0E0D02F, "volume_down"},
+              {0xE0E0F00F, "mute"},
+              {0xE0E048B7, "channel_up"},
+              {0xE0E008F7, "channel_down"},
+              {0xE0E0D629, "channel_list"},
+              {0xE0E0C838, "pre_ch"},
+              {0xE0E0807F, "source"},
+              {0xE0E0D12E, "hdmi"},
+              {0xE0E0D827, "tv"},
+              {0xE0E058A7, "menu"},
+              {0xE0E09E61, "home"},
+              {0xE0E0D22D, "tools"},
+              {0xE0E0F807, "info"},
+              {0xE0E0F20D, "guide"},
+              {0xE0E006F9, "up"},
+              {0xE0E08679, "down"},
+              {0xE0E0A659, "left"},
+              {0xE0E046B9, "right"},
+              {0xE0E016E9, "enter"},
+              {0xE0E01AE5, "back"},
+              {0xE0E0B44B, "exit"},
+              {0xE0E0E21D, "play"},
+              {0xE0E052AD, "pause"},
+              {0xE0E0629D, "stop"},
+              {0xE0E0A25D, "rewind"},
+              {0xE0E012ED, "forward"},
+              {0xE0E0926D, "record"},
+              {0xE0E036C9, "red"},
+              {0xE0E028D7, "green"},
+              {0xE0E0A857, "yellow"},
+              {0xE0E06897, "blue"},
+              {0xE0E0A45B, "subtitle"},
+              {0xE0E0C03F, "sleep"},
+              {0xE0E07C83, "picture_size"},
+              {0xE0E0FC03, "e_manual"},
+              {0xE0E08877, "num_0"},
+              {0xE0E020DF, "num_1"},
+              {0xE0E0A05F, "num_2"},
+              {0xE0E0609F, "num_3"},
+              {0xE0E010EF, "num_4"},
+              {0xE0E0906F, "num_5"},
+              {0xE0E050AF, "num_6"},
+              {0xE0E030CF, "num_7"},
+              {0xE0E0B04F, "num_8"},
+              {0xE0E0708F, "num_9"},
+        };
+        char hex[13];
+        snprintf(hex, sizeof(hex), "0x%08X", (unsigned int) x.data);
+        id(ir_code).publish_state(hex);
+        auto it = NAMEN.find((uint32_t) x.data);
+        id(ir_taste).publish_state(it == NAMEN.end() ? "unbekannt" : it->second);
+  # --- Ende IR-Empfang ---
+
+remote_transmitter:
+  # TX GPIO39 to the IR diode, RX GPIO38 to the TSOP receiver: the dock's pins.
+  # GPIO19/20 are the USB lines and do not work (a lesson of 17.08.2026).
+  pin:
+    number: GPIO39
+  carrier_duty_percent: 50%
+  non_blocking: true
+  # --- Ende IR-Pins ---
+
+script:
+  - id: tv_power_on
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E09966
+          repeat:
+            times: 3
+  - id: tv_power_off
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E019E6
+          repeat:
+            times: 3
+  - id: tv_power
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E040BF
+          repeat:
+            times: 3
+            wait_time: 40ms
+
+  - id: tv_volume_up
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0E01F
+
+  - id: tv_volume_down
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0D02F
+
+  - id: tv_mute
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0F00F
+  - id: tv_source
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0807F
+  - id: tv_hdmi
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0D12E
+  - id: tv_ch_up
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E048B7
+  - id: tv_ch_down
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E008F7
+  - id: tv_menu
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E058A7
+  - id: tv_home
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E09E61
+  - id: tv_up
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E006F9
+  - id: tv_down
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E08679
+  - id: tv_left
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0A659
+  - id: tv_right
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E046B9
+  - id: tv_enter
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E016E9
+  - id: tv_back
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E01AE5
+  - id: tv_exit
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0B44B
+  - id: tv_play
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E0E21D
+  - id: tv_pause
+    then:
+      - remote_transmitter.transmit_samsung:
+          data: 0xE0E052AD
+
+button:
+  - platform: template
+    name: "TV Power On"
+    id: tv_power_on_button
+    on_press:
+      - script.execute: tv_power_on
+
+  - platform: template
+    name: "TV Power Off"
+    id: tv_power_off_button
+    on_press:
+      - script.execute: tv_power_off
+
+  - platform: template
+    name: "TV Power"
+    id: tv_power_button
+    on_press:
+      - script.execute: tv_power
+
+  - platform: template
+    name: "TV Volume Up"
+    id: tv_volume_up_button
+    on_press:
+      - script.execute: tv_volume_up
+
+  - platform: template
+    name: "TV Volume Down"
+    id: tv_volume_down_button
+    on_press:
+      - script.execute: tv_volume_down
+
+  - platform: template
+    name: "TV Mute"
+    id: tv_mute_button
+    on_press:
+      - script.execute: tv_mute
+  - platform: template
+    name: "TV Source"
+    id: tv_source_button
+    on_press:
+      - script.execute: tv_source
+  - platform: template
+    name: "TV HDMI"
+    id: tv_hdmi_button
+    on_press:
+      - script.execute: tv_hdmi
+  - platform: template
+    name: "TV Channel Up"
+    id: tv_channel_up_button
+    on_press:
+      - script.execute: tv_ch_up
+  - platform: template
+    name: "TV Channel Down"
+    id: tv_channel_down_button
+    on_press:
+      - script.execute: tv_ch_down
+  - platform: template
+    name: "TV Menu"
+    id: tv_menu_button
+    on_press:
+      - script.execute: tv_menu
+  - platform: template
+    name: "TV Home"
+    id: tv_home_button
+    on_press:
+      - script.execute: tv_home
+  - platform: template
+    name: "TV Up"
+    id: tv_up_button
+    on_press:
+      - script.execute: tv_up
+  - platform: template
+    name: "TV Down"
+    id: tv_down_button
+    on_press:
+      - script.execute: tv_down
+  - platform: template
+    name: "TV Left"
+    id: tv_left_button
+    on_press:
+      - script.execute: tv_left
+  - platform: template
+    name: "TV Right"
+    id: tv_right_button
+    on_press:
+      - script.execute: tv_right
+  - platform: template
+    name: "TV OK"
+    id: tv_ok_button
+    on_press:
+      - script.execute: tv_enter
+  - platform: template
+    name: "TV Back"
+    id: tv_back_button
+    on_press:
+      - script.execute: tv_back
+  - platform: template
+    name: "TV Exit"
+    id: tv_exit_button
+    on_press:
+      - script.execute: tv_exit
+  - platform: template
+    name: "TV Play"
+    id: tv_play_button
+    on_press:
+      - script.execute: tv_play
+  - platform: template
+    name: "TV Pause"
+    id: tv_pause_button
+    on_press:
+      - script.execute: tv_pause
+
+switch:
+# Sensor dock IR supply: RXD/GPIO44 drives the AO3401A P-channel gate.
+# LOW enables IR_3V3 for both receiver and transmitter.
+# Source: Espressif SCH_ESP32-S3-BOX-3-SENSOR-02_V1.1_20230808.pdf
+  - platform: gpio
+    id: ir_power
+    internal: true
+    pin:
+      number: GPIO44
+      inverted: true
+    restore_mode: ALWAYS_ON

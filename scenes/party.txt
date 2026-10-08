@@ -1,0 +1,13 @@
+# A birthday: confetti and sparkles, two spinning stars, Muse waves, the cake bobs.
+bg #2d1b4e #5a2a83
+particles confetti 70 speed=1.2
+particles sparkle 30 color=#fff6d5
+star 40 40 18 gold spin=4000
+star 284 108 14 #ff9f1c spin=3000 rot=20
+muse 70 156 wave r=56
+text 196 36 "Alles Gute" size=xl color=white align=center
+text 196 86 "zum Geburtstag!" size=m color=#ffd6e7 align=center
+icon 196 158 cake-variant color=#ffd166 size=l move=0,-8 period=1800
+icon 268 196 party-popper color=#ff6b9d
+icon 150 206 balloon color=#9fd3ff move=0,-10 period=2600
+seconds 30

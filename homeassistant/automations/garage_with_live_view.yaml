@@ -1,0 +1,25 @@
+# Garage door opens: the card, then 15 s of live view from the garage camera through
+# Home Assistant's camera proxy, scaled to the card (the box decodes small pictures in
+# well under a second; a 2880 x 1616 frame takes it 3 s).
+alias: "Muse Box: garage opens"
+mode: restart
+triggers:
+  - trigger: state
+    entity_id: cover.garage_door
+    from: closed
+    to: opening
+actions:
+  - action: esphome.muse_box_muse_show_event
+    continue_on_error: true
+    data:
+      icon: garage
+      title: "Garage"
+      message: "Das Tor geht auf, {{ now().strftime('%H:%M') }}"
+  - delay:
+      seconds: 4
+  - action: esphome.muse_box_muse_show_live
+    continue_on_error: true
+    data:
+      title: "Garage"
+      url: "http://homeassistant.local:8123{{ state_attr('camera.garage', 'entity_picture') }}&width=300&height=168"
+      seconds: 15
