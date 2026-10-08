@@ -1,10 +1,10 @@
 
-# Muse ESP32BoxS3 Toy: the ESP32-S3-BOX-3 as the face, voice and ears of an AI assistant.
+# Muse ESP32BoxS3 Screen: the ESP32-S3-BOX-3 as the face, voice and ears of an AI assistant.
 # Everything that differs from house to house is a substitution or a secret; the rest is
-# the firmware. Docs: ../README.md, ../docs/. Build: esphome compile firmware/muse-box.yaml
+# the firmware. Docs: ../README.md, ../docs/. Build: esphome compile firmware/muse-esp32boxs3-screen.yaml
 substitutions:
-  name: muse-box                 # device name, also the mDNS name: muse-box.local
-  friendly_name: Muse Box
+  name: muse-esp32boxs3-screen                 # device name, also the mDNS name: muse-esp32boxs3-screen.local
+  friendly_name: Muse ESP32BoxS3 Screen
   # Home Assistant as the box reaches it (pictures, the doorbell file, routes' "home")
   ha_url: "http://homeassistant.local:8123"
   # The AHT20 on the sensor dock sits beside the warm display; on one box it read
@@ -54,8 +54,8 @@ esphome:
         - delay: 3s
         - script.execute: audio_init
   project:
-    name: "leopardcodeai.muse_esp32boxs3_toy"
-    version: "4.1.0"
+    name: "leopardcodeai.muse_esp32boxs3_screen"
+    version: "4.2.0"
 
 # Optional parts live in packages/. Uncomment a line to take one in: the Samsung TV
 # remote through the dock's IR (not needed for anything else the box does).
@@ -93,7 +93,7 @@ api:
   actions:
   # --- MUSE (06.10.2026, v3 07.10.2026): the assistant Muse drives this display ---
   # Called from Home Assistant, for example:
-  #   action: esphome.muse_box_muse_show_text
+  #   action: esphome.muse_esp32boxs3_screen_muse_show_text
   #   data: {title: "Erinnerung", message: "Sam kommt um 18:30."}
   # Whatever Muse shows stays a while (text, value and events 20 s, confetti 30 s,
   # weather 60 s, photos 90 s; long texts page through and stay longer; a scene as long
@@ -607,7 +607,7 @@ api:
               root["timers"] = (int) muse::timers().size();
               root["volume"] = (int) lroundf(id(muse_player)->volume * 100);
               root["display_off"] = id(muse_screen_off);
-              root["version"] = "4.1.0";
+              root["version"] = "4.2.0";
     # Hardware check: asks every chip of the box and of the sensor dock
     # who it is, reads the pins of buttons, touch and radar, the battery voltage and how
     # the audio chips came up. Read only. The answer lists every reading with what a
@@ -1762,7 +1762,7 @@ display:
       }
       if (mode == 12) {
         // The box about itself (a tap on the top bar): power, air, memory, what waits.
-        it.print(160, 36, id(m_title), INK, TextAlign::TOP_CENTER, "Muse Box 4.1.0", BG);
+        it.print(160, 36, id(m_title), INK, TextAlign::TOP_CENTER, "Muse Screen 4.2.0", BG);
         char line[6][64];
         snprintf(line[0], 64, "%.2f V  ·  %d %%", id(battery_voltage).state, (int) id(battery_pct).state);
         snprintf(line[1], 64, "%d dBm", (int) id(wifi_rssi).state);

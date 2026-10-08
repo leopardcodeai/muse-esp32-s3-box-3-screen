@@ -1,18 +1,20 @@
 <p align="center"><img src="docs/hero/hero.jpg" width="900" alt="A small black smart display with a round blue cartoon character and a weather card on its screen, on a desk at dusk beside a phone and a laptop"></p>
 <p align="center"><sub>An impression, not a photo: made with an image model on 7 October 2026 (the prompt and the model are in <a href="docs/hero/hero.openai.txt">docs/hero/hero.openai.txt</a>). The real ESP32-S3-BOX-3 is squarer. Everything else on this page is rendered from the code.</sub></p>
 
-# Muse ESP32BoxS3 Toy
+# Muse ESP32BoxS3 Screen
+
+> **Read the story behind it:** [An always-on AI agent needs a body in the house](https://blog.leopardcode.ai/en/esp32-box-as-the-body-of-an-always-on-agent/) (English) · [Ein KI-Agent, der immer da ist, braucht einen Körper im Haus](https://blog.leopardcode.ai/de/esp32-box-as-the-body-of-an-always-on-agent/) (Deutsch), on blog.leopardcode.ai.
 
 One assistant, many hands. An Espressif ESP32-S3-BOX-3 (a 2.4 inch touch screen, two microphones, a speaker, and a dock with radar, climate sensor and battery) becomes the face, voice and ears of an AI assistant in the house. The assistant draws the screen itself in a small drawing language, asks back with buttons, counts timers, shows routes on OpenStreetMap, GIFs, photos and live cameras, hears its wake word on the device and talks through Home Assistant's voice pipeline. Built with ESPHome and Home Assistant, driven by Meta's Muse, by Claude, or by any agent that can call an API.
 
 The whole thing is one ESPHome configuration, five C++ headers and a handful of tools. Everything that differs from house to house is a substitution or a secret.
 
-> **Status, 7 October 2026:** firmware 4.1.0 runs on one ESP32-S3-BOX-3 with the BOX-3-SENSOR dock, built with ESPHome 2026.9.1 on ESP-IDF 5.5.5 and confirmed with Home Assistant 2026.9.4. Flash 95 % of the 8 MB app partition, RAM 49 % of the 342 KB of static RAM, no compiler warning from this project's own code, no warning in the box's log after boot. What changed when: [CHANGELOG.md](CHANGELOG.md). Every number in this file was measured on that box; the sources at the end carry the rest.
+> **Status, 8 October 2026:** firmware 4.1.0 runs on one ESP32-S3-BOX-3 (4.2.0 changes only the names) with the BOX-3-SENSOR dock, built with ESPHome 2026.9.1 on ESP-IDF 5.5.5 and confirmed with Home Assistant 2026.9.4. Flash 95 % of the 8 MB app partition, RAM 49 % of the 342 KB of static RAM, no compiler warning from this project's own code, no warning in the box's log after boot. What changed when: [CHANGELOG.md](CHANGELOG.md). Every number in this file was measured on that box; the sources at the end carry the rest.
 
 ## Contents
 
 - [What it does](#what-it-does)
-- [The toy in pictures](#the-toy-in-pictures)
+- [The screen in pictures](#the-screen-in-pictures)
 - [How it fits together](#how-it-fits-together)
 - [Who talks to it](#who-talks-to-it)
 - [Hardware](#hardware)
@@ -48,7 +50,7 @@ The whole thing is one ESPHome configuration, five C++ headers and a handful of 
 - **Runs on a Mac as well.** [`web/`](web/) is the box's twin in the browser: the same cards and scenes drawn on a 320 x 240 canvas with the same parser, fonts, timings and particles, fed by the same Home Assistant actions (it listens to the box's `call_service` events, or to a `muse_web` event of its own), installable as a Dock app in Chrome or Safari and floating above every other window as a Picture-in-Picture display. Plain ES modules without a build step; `index.html?demo=1` shows everything without Home Assistant ([web/README.md](web/README.md)).
 - **Keeps the house in the house.** Home Assistant and the box talk on the LAN over an encrypted API. Only pictures from the web, routes (OpenStreetMap) and music streams leave; nothing is sent to anyone else ([docs/PRIVACY.md](docs/PRIVACY.md)).
 
-## The toy in pictures
+## The screen in pictures
 
 <p align="center">
   <img src="docs/previews/party.gif" width="320" alt="A birthday scene the assistant drew itself: confetti, a cake, the figure waving in a round frame">
@@ -74,13 +76,13 @@ Left to right: the assistant reasons in its own cloud (Muse in Meta's datacenter
 
 ## Who talks to it
 
-Everything the box can do is a Home Assistant action named `esphome.<device>_muse_<something>`, with the device `muse-box` that is `esphome.muse_box_muse_show_text` and so on. Whoever can call Home Assistant can drive the box; the prompt that teaches an assistant the box is in [docs/ASSISTANT_PROMPT.md](docs/ASSISTANT_PROMPT.md), in English and in German, and it is the whole integration: paste it once, the assistant remembers.
+Everything the box can do is a Home Assistant action named `esphome.<device>_muse_<something>`, with the device `muse-esp32boxs3-screen` that is `esphome.muse_esp32boxs3_screen_muse_show_text` and so on. Whoever can call Home Assistant can drive the box; the prompt that teaches an assistant the box is in [docs/ASSISTANT_PROMPT.md](docs/ASSISTANT_PROMPT.md), in English and in German, and it is the whole integration: paste it once, the assistant remembers.
 
 | Assistant | How it reaches the box | What it needs |
 |---|---|---|
 | Meta Muse | its Home Assistant connection, with a long-lived access token [10] | the prompt, pasted once into a chat with Muse |
-| Claude (Code, Desktop, app) | the Home Assistant MCP server, or [`tools/muse_box.py`](tools/muse_box.py) from a shell | the same prompt as a project instruction, or `CLAUDE.md` of your own |
-| Grok, Dots, Spark, any agent | Home Assistant's REST API: `POST /api/services/esphome/muse_box_<action>` with `Authorization: Bearer <token>` [10] | the prompt and a token; `tools/muse_box.py` shows every call |
+| Claude (Code, Desktop, app) | the Home Assistant MCP server, or [`tools/muse_screen.py`](tools/muse_screen.py) from a shell | the same prompt as a project instruction, or `CLAUDE.md` of your own |
+| Grok, Dots, Spark, any agent | Home Assistant's REST API: `POST /api/services/esphome/muse_esp32boxs3_screen_<action>` with `Authorization: Bearer <token>` [10] | the prompt and a token; `tools/muse_screen.py` shows every call |
 | Home Assistant itself | automations and scripts, and its voice assistant for timers and conversation | the examples in [homeassistant/](homeassistant/) |
 
 "Muse" in the name is where this started: the box was built to give Meta's Muse a body in a house in Germany, where Meta's own gadget pairing is not available (see [What Meta's own SDK does differently](#what-metas-own-sdk-does-differently)). Nothing in the firmware is tied to Muse; the figure, the status words and the prompt are the only things that mention it, and all three are yours to change. Four scenes, one per assistant that is not Muse, rendered from `scenes/hello_*.txt`:
@@ -102,7 +104,7 @@ The exact board matters: this is the **ESP32-S3-BOX-3** (2023), not the BOX or t
 | BOX-3-SENSOR dock (AHT20 temperature and humidity, 24 GHz radar, IR sender and receiver, 18650 battery holder with charger, microSD slot) [1] | no, but most of the fun | presence, room climate, the battery gauge, the optional TV remote | part of the full kit |
 | an 18650 cell | no | the battery gauge; the box runs from USB-C without it | any electronics shop |
 | a USB-C data cable | for the first flash | after that, every flash is over the air | |
-| Home Assistant 2026.9 or newer with ESPHome 2026.9.1 or newer | yes | the other half of the toy | [home-assistant.io](https://www.home-assistant.io), [esphome.io](https://esphome.io) |
+| Home Assistant 2026.9 or newer with ESPHome 2026.9.1 or newer | yes | the other half of the screen | [home-assistant.io](https://www.home-assistant.io), [esphome.io](https://esphome.io) |
 
 Pins, bus addresses and what a healthy box answers to `muse_hw_check` are in [docs/HARDWARE.md](docs/HARDWARE.md); the pin facts come from Espressif's board support package [2]. Unboxing, download mode, the first flash and the way into Home Assistant, step by step: [docs/BOX3_SETUP.md](docs/BOX3_SETUP.md).
 
@@ -113,22 +115,22 @@ Seven steps from a box in its packaging to the first card. Expect 15 minutes plu
 1. **Clone and configure.**
 
    ```bash
-   git clone https://github.com/leopardcodeai/muse-esp32boxs3-toy.git
-   cd muse-esp32boxs3-toy/firmware
+   git clone https://github.com/leopardcodeai/muse-esp32boxs3-screen.git
+   cd muse-esp32boxs3-screen/firmware
    cp secrets.yaml.example secrets.yaml
    ```
 
    Fill in `secrets.yaml`: Wi-Fi name and password, a password for the fallback hotspot, and an API key. ESPHome's API key is 32 random bytes in base64; `openssl rand -base64 32` makes one. `secrets.yaml` is in `.gitignore` and stays on your machine.
 
-2. **Look at the substitutions** at the top of [`firmware/muse-box.yaml`](firmware/muse-box.yaml): the device name, your Home Assistant URL, the tile server, the temperature offset, the figure. The defaults work; change them later.
+2. **Look at the substitutions** at the top of [`firmware/muse-esp32boxs3-screen.yaml`](firmware/muse-esp32boxs3-screen.yaml): the device name, your Home Assistant URL, the tile server, the temperature offset, the figure. The defaults work; change them later.
 
 3. **Compile and flash over USB.** Put the box into download mode (hold BOOT, press RESET, release BOOT; the LCD stays dark) and run
 
    ```bash
-   esphome run muse-box.yaml
+   esphome run muse-esp32boxs3-screen.yaml
    ```
 
-   ESPHome picks the serial port, flashes, and opens the log. From then on `esphome run muse-box.yaml --device muse-box.local` flashes over the air.
+   ESPHome picks the serial port, flashes, and opens the log. From then on `esphome run muse-esp32boxs3-screen.yaml --device muse-esp32boxs3-screen.local` flashes over the air.
 
 4. **Read the log** until the box has joined Wi-Fi and the audio chips report (`audio_init: ... set up`). No `[W]` or `[E]` lines are the goal; the box prints `scene:` and `card` lines later as it works.
 
@@ -136,10 +138,10 @@ Seven steps from a box in its packaging to the first card. Expect 15 minutes plu
 
 6. **Give it a voice.** On the device page, pick an Assist pipeline for the voice assistant. Say "Hey Jarvis" (the model behind the name "Muse"), or long-press the ready screen.
 
-7. **Send the first card.** Developer tools, Actions, `esphome.muse_box_muse_show_text` with a title and a message. Or from a shell:
+7. **Send the first card.** Developer tools, Actions, `esphome.muse_esp32boxs3_screen_muse_show_text` with a title and a message. Or from a shell:
 
    ```bash
-   HA_URL=http://homeassistant.local:8123 HA_TOKEN=... python3 tools/muse_box.py text "Hallo" "Die Box ist da."
+   HA_URL=http://homeassistant.local:8123 HA_TOKEN=... python3 tools/muse_screen.py text "Hallo" "Die Box ist da."
    ```
 
    Then paste [docs/ASSISTANT_PROMPT.md](docs/ASSISTANT_PROMPT.md) into your assistant and ask it for a scene.
@@ -156,11 +158,11 @@ The agent runs `esphome run`, watches the log, and reports. It never needs your 
 
 ## Make it yours
 
-**Substitutions** (the top of `firmware/muse-box.yaml`):
+**Substitutions** (the top of `firmware/muse-esp32boxs3-screen.yaml`):
 
 | Substitution | Default | Effect |
 |---|---|---|
-| `name`, `friendly_name` | `muse-box`, `Muse Box` | the device name, also the mDNS name and the prefix of every action and entity |
+| `name`, `friendly_name` | `muse-esp32boxs3-screen`, `Muse ESP32BoxS3 Screen` | the device name, also the mDNS name and the prefix of every action and entity |
 | `ha_url` | `http://homeassistant.local:8123` | where the box fetches your doorbell picture and camera views |
 | `doorbell_image` | `/local/doorbell_latest.jpg` | the still picture under Home Assistant's `www` folder that `muse_show_image` shows when its `url` is empty |
 | `map_tiles` | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | the tile server for route maps: any `{z}/{x}/{y}` server with 256 px PNG tiles, your own included |
@@ -169,7 +171,7 @@ The agent runs `esphome run`, watches the log, and reports. It never needs your 
 
 **Secrets** stay in `firmware/secrets.yaml`, which git ignores: Wi-Fi, the hotspot password, the API key that also encrypts OTA uploads. There is no token anywhere in the repository and the tools take theirs from the environment (`HA_TOKEN`). `tools/check_private.py` scans the tree for private addresses, tokens, e-mail addresses and the house's names before every commit, and refuses a changed figure.
 
-**Your own overlay.** The cleanest way to keep a house-specific setup is one small YAML that includes `muse-box.yaml` as a package and overrides what differs: your names for the entities (`!extend` by id, every entity has one), a fixed IP, Meta's figure, the optional TV remote. The firmware stays untouched and `git pull` brings new features. How, with a complete example: [docs/HOME_OVERLAY.md](docs/HOME_OVERLAY.md).
+**Your own overlay.** The cleanest way to keep a house-specific setup is one small YAML that includes `muse-esp32boxs3-screen.yaml` as a package and overrides what differs: your names for the entities (`!extend` by id, every entity has one), a fixed IP, Meta's figure, the optional TV remote. The firmware stays untouched and `git pull` brings new features. How, with a complete example: [docs/HOME_OVERLAY.md](docs/HOME_OVERLAY.md).
 
 **Meta's figure.** The animations of the Muse app are Meta's artwork and are not in this repository; the placeholder (a round blue character, 16 frames per animation, drawn by `tools/make_placeholder_figure.py`) is. If you have the Muse app installed, `tools/make_muse_assets.py` cuts the app's own videos into `firmware/figure/muse_*.png`, which `.gitignore` keeps out of git; set `figure_prefix: "muse_"` and rebuild. The app's typeface (Optimistic) is not used, because its licence forbids altering it.
 
@@ -212,14 +214,14 @@ trigger:
     entity_id: binary_sensor.doorbell_ring
     to: "on"
 action:
-  - action: esphome.muse_box_muse_show_event
+  - action: esphome.muse_esp32boxs3_screen_muse_show_event
     continue_on_error: true
     data:
       icon: doorbell
       title: Es klingelt
       message: Jemand steht vor der Tür.
   - delay: "00:00:05"
-  - action: esphome.muse_box_muse_show_image
+  - action: esphome.muse_esp32boxs3_screen_muse_show_image
     continue_on_error: true
     data:
       title: Es klingelt
@@ -333,7 +335,7 @@ Two findings behind those numbers that cost real time: with mbedTLS in internal 
 | the figure is a blue blob | that is the placeholder, on purpose | see Meta's figure under [Make it yours](#make-it-yours) |
 | Home Assistant shows "Re-authentication required" after a flash | you added or changed the API key | enter the key from `secrets.yaml` once |
 | Spotify through Music Assistant waits 30 s and plays nothing | Music Assistant throttles its Spotify Web API calls on a shared allowance | wait a minute; radio and local files play at once |
-| the first flash over USB succeeds, the box never joins Wi-Fi | the SSID or password in `secrets.yaml` is wrong, or the network is 5 GHz only | the ESP32-S3 has 2.4 GHz only; the fallback hotspot `muse-box` appears after 90 s |
+| the first flash over USB succeeds, the box never joins Wi-Fi | the SSID or password in `secrets.yaml` is wrong, or the network is 5 GHz only | the ESP32-S3 has 2.4 GHz only; the fallback hotspot `muse-esp32boxs3-screen` appears after 90 s |
 
 ## FAQ
 
@@ -354,9 +356,9 @@ Two findings behind those numbers that cost real time: with mbedTLS in internal 
 ## Repository layout
 
 ```text
-muse-esp32boxs3-toy/
+muse-esp32boxs3-screen/
   firmware/
-    muse-box.yaml            the ESPHome configuration: actions, display, touch, audio, sensors
+    muse-esp32boxs3-screen.yaml            the ESPHome configuration: actions, display, touch, audio, sensors
     muse.h                   drawing helpers, card queue, questions, timers, lists, the status bar
     muse_scene.h             the parser of the drawing language
     muse_media.h             the picture task: downloads, JPEG, PNG, GIF, live views, routes, tiles
@@ -375,7 +377,7 @@ muse-esp32boxs3-toy/
   scenes/                    scenes to send as they are, and the sources of the previews
   docs/                      actions, scenes, hardware, setup, flashing with an agent, privacy, the overlay, the diagram, previews
   tools/
-    muse_box.py              a command line for every action over the REST API
+    muse_screen.py              a command line for every action over the REST API
     render_scene.py          renders a scene to PNG or GIF exactly as the box would
     check_private.py         refuses private data before a commit
     make_icon_table.py, make_sounds.py, make_weather_icons.py, make_placeholder_figure.py, make_muse_assets.py, make_hero_image.py
@@ -390,16 +392,16 @@ muse-esp32boxs3-toy/
 - **Web app tests**: `node --test web/test` (60 tests, no dependencies); the demo is `cd web && python3 -m http.server 8321`, then `http://localhost:8321/index.html?demo=1`.
 - **Host tests**: `tools/tests/` compile with `clang++ -fsanitize=address,undefined` and run in a second; `tools/test_render_scene.py` runs with `uv run --python 3.14 --with pillow --with fonttools --with pytest -m pytest tools/ -q` (9 tests).
 - **Previews**: `uv run --python 3.14 --with pillow --with fonttools tools/render_scene.py --all scenes docs/previews --clock "2026-10-07 21:30"` rebuilds every PNG and GIF in 6 s; a fixed clock keeps the files byte-identical between runs.
-- **Before a commit**: `python3 tools/check_private.py`, then `esphome config firmware/muse-box.yaml`.
+- **Before a commit**: `python3 tools/check_private.py`, then `esphome config firmware/muse-esp32boxs3-screen.yaml`.
 - **The hero picture**: `tools/make_hero_image.py --provider openai` asks an image model for a new one and writes the prompt beside it; the chosen file is committed with its `.txt`, and it is not regenerated on a whim, because every run differs.
 - **Icons**: `tools/make_icon_table.py` regenerates `muse_icons.h` from `muse_icon_glyphs.yaml` and the Material Design Icons font; a codepoint is never guessed, it is looked up.
-- **Adding an action**: copy the shortest one in `muse-box.yaml` (`muse_show_value`), give it a mode in the display lambda, a line in `docs/ACTIONS.md` and in the prompt, and a scene or card in `scenes/` when it draws something new. Home Assistant makes every field mandatory, so document the empty value.
+- **Adding an action**: copy the shortest one in `muse-esp32boxs3-screen.yaml` (`muse_show_value`), give it a mode in the display lambda, a line in `docs/ACTIONS.md` and in the prompt, and a scene or card in `scenes/` when it draws something new. Home Assistant makes every field mandatory, so document the empty value.
 
 ## What Meta's own SDK does differently
 
-Meta publishes the Muse Gadget SDK, Apache 2.0, for ESP32 boards and Linux machines; a gadget pairs with the Muse app through an SDK token and the app's developer mode [7]. Its page for this very board states what is not integrated: "Dock sensors, SD card, IR, battery telemetry, and wake-word detection are not integrated", the capacitive home button neither [8]. This toy takes the opposite route and keeps the house's hub in the middle:
+Meta publishes the Muse Gadget SDK, Apache 2.0, for ESP32 boards and Linux machines; a gadget pairs with the Muse app through an SDK token and the app's developer mode [7]. Its page for this very board states what is not integrated: "Dock sensors, SD card, IR, battery telemetry, and wake-word detection are not integrated", the capacitive home button neither [8]. This screen takes the opposite route and keeps the house's hub in the middle:
 
-| | Muse Gadget SDK on the BOX-3 [7] [8] | this toy |
+| | Muse Gadget SDK on the BOX-3 [7] [8] | this screen |
 |---|---|---|
 | who the box talks to | the Muse app, paired as a gadget | Home Assistant, as an ESPHome device; any assistant through Home Assistant |
 | account needed | a Muse account with an SDK token, Muse available in your country [9] | a Home Assistant instance |
@@ -411,7 +413,7 @@ Meta publishes the Muse Gadget SDK, Apache 2.0, for ESP32 boards and Linux machi
 
 ## Comparable projects
 
-Five projects were read before this README was written, so that nothing they do well is missing here: a voice assistant with characters and a draw-on-screen action in pure ESPHome [24a], an LVGL dashboard with a page per screen [24b], a modular voice assistant [24c], the custom firmware most of them credit, with a browser installer [24d], and Meta's SDK [7]. What this toy adds: a drawing language the assistant writes itself, a card queue with touch answers that flow back to the agent, timers, routes, GIFs, a sensor dock in use, previews rendered from the code, and a privacy page that names every host.
+Five projects were read before this README was written, so that nothing they do well is missing here: a voice assistant with characters and a draw-on-screen action in pure ESPHome [24a], an LVGL dashboard with a page per screen [24b], a modular voice assistant [24c], the custom firmware most of them credit, with a browser installer [24d], and Meta's SDK [7]. What this screen adds: a drawing language the assistant writes itself, a card queue with touch answers that flow back to the agent, timers, routes, GIFs, a sensor dock in use, previews rendered from the code, and a privacy page that names every host.
 
 ## Licence and third-party work
 

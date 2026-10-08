@@ -1,14 +1,14 @@
 # Your own overlay: one file for everything that is yours
 
-The firmware in `firmware/muse-box.yaml` is the same for every house. What differs (the device name, the names Home Assistant shows, a fixed IP, Meta's figure, the optional TV remote) goes into one small YAML of your own that includes the firmware as a package and overrides the rest. New features arrive with `git pull`; your file never conflicts.
+The firmware in `firmware/muse-esp32boxs3-screen.yaml` is the same for every house. What differs (the device name, the names Home Assistant shows, a fixed IP, Meta's figure, the optional TV remote) goes into one small YAML of your own that includes the firmware as a package and overrides the rest. New features arrive with `git pull`; your file never conflicts.
 
 ## Why one directory
 
-ESPHome resolves every file path in a configuration (`includes`, `image: file`, `font`, `media_player: files`, the wake word model) against the directory of the **main** YAML, the one you pass on the command line [1]. So the overlay has to live in `firmware/`, next to `muse-box.yaml`. If you keep it in a repository of your own, link it in:
+ESPHome resolves every file path in a configuration (`includes`, `image: file`, `font`, `media_player: files`, the wake word model) against the directory of the **main** YAML, the one you pass on the command line [1]. So the overlay has to live in `firmware/`, next to `muse-esp32boxs3-screen.yaml`. If you keep it in a repository of your own, link it in:
 
 ```bash
-ln -s ~/my-house/muse-box.home.yaml ~/muse-esp32boxs3-toy/firmware/muse-box.home.yaml
-ln -s ~/my-house/secrets.yaml       ~/muse-esp32boxs3-toy/firmware/secrets.yaml
+ln -s ~/my-house/muse-esp32boxs3-screen.home.yaml ~/muse-esp32boxs3-screen/firmware/muse-esp32boxs3-screen.home.yaml
+ln -s ~/my-house/secrets.yaml       ~/muse-esp32boxs3-screen/firmware/secrets.yaml
 ```
 
 `.gitignore` of this repository ignores `firmware/*.home.yaml` and `firmware/secrets.yaml`, so neither can be committed here by accident.
@@ -16,7 +16,7 @@ ln -s ~/my-house/secrets.yaml       ~/muse-esp32boxs3-toy/firmware/secrets.yaml
 ## The file
 
 ```yaml
-# muse-box.home.yaml: the box at home, as an overlay over firmware/muse-box.yaml.
+# muse-esp32boxs3-screen.home.yaml: the box at home, as an overlay over firmware/muse-esp32boxs3-screen.yaml.
 substitutions:
   name: kitchen-box
   friendly_name: Kitchen Box
@@ -27,7 +27,7 @@ substitutions:
   map_tiles: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 
 packages:
-  base: !include muse-box.yaml
+  base: !include muse-esp32boxs3-screen.yaml
   tv: !include packages/samsung_tv_ir.yaml     # leave out if you have no Samsung TV
 
 wifi:
@@ -63,9 +63,9 @@ button:
 Build, flash and read the log with the overlay as the main file:
 
 ```bash
-cd ~/muse-esp32boxs3-toy/firmware
-esphome run muse-box.home.yaml --device kitchen-box.local
-esphome logs muse-box.home.yaml --device kitchen-box.local
+cd ~/muse-esp32boxs3-screen/firmware
+esphome run muse-esp32boxs3-screen.home.yaml --device kitchen-box.local
+esphome logs muse-esp32boxs3-screen.home.yaml --device kitchen-box.local
 ```
 
 ## Checking that nothing changed by accident
@@ -74,7 +74,7 @@ esphome logs muse-box.home.yaml --device kitchen-box.local
 
 ```bash
 esphome config old-full-config.yaml > /tmp/old.yaml
-esphome config muse-box.home.yaml  > /tmp/new.yaml
+esphome config muse-esp32boxs3-screen.home.yaml  > /tmp/new.yaml
 diff <(grep -E '^\s*name:' /tmp/old.yaml | sort) <(grep -E '^\s*name:' /tmp/new.yaml | sort)
 ```
 

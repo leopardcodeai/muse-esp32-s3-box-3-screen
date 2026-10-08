@@ -1,10 +1,10 @@
 # Optional package: a Samsung TV remote through the sensor dock's IR diode and receiver.
-# Include it from muse-box.yaml (`packages:`) or leave it out. The 49 codes are the
+# Include it from muse-esp32boxs3-screen.yaml (`packages:`) or leave it out. The 49 codes are the
 # common Samsung ones; `tv_key` sends one three times, the receiver reports what the
 # original remote sends, so new codes can be learned in Home Assistant.
 api:
   # One action instead of forty button entities. From Home Assistant:
-  #   action: esphome.muse_box_tv_key
+  #   action: esphome.muse_esp32boxs3_screen_tv_key
   #   data: {key: hdmi}
   actions:
     - action: tv_key

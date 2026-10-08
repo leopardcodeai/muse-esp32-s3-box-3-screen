@@ -82,7 +82,7 @@ Every element also takes:
   picture is drawn less often and the box logs `scene is slow`; for every scene it logs
   `scene: N pictures in the first 3 s, the slowest took N ms`.
 
-Tried examples are in `scenes/` (weather, welcome, wink, night, progress). `tools/muse_box.py scene scenes/night.txt` sends one and prints the box's answer.
+Tried examples are in `scenes/` (weather, welcome, wink, night, progress). `tools/muse_screen.py scene scenes/night.txt` sends one and prints the box's answer.
 
 An animation in frames, here a face that winks:
 

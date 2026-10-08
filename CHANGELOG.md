@@ -1,6 +1,11 @@
 # Changelog
 
-The version is `esphome: project: version` in `firmware/muse-box.yaml`; the box reports it in `muse_get_state` and on its info screen. Dates are the day the firmware ran on the box. Wrong turns are recorded, because the same mistake comes back otherwise.
+The version is `esphome: project: version` in `firmware/muse-esp32boxs3-screen.yaml`; the box reports it in `muse_get_state` and on its info screen. Dates are the day the firmware ran on the box. Wrong turns are recorded, because the same mistake comes back otherwise.
+
+## 4.2.0, 8 October 2026
+
+- The project is called Muse ESP32BoxS3 Screen, and the box's default device name is `muse-esp32boxs3-screen`, so its actions are `esphome.muse_esp32boxs3_screen_muse_*` (they were `esphome.muse_box_muse_*`). The repository moved to github.com/leopardcodeai/muse-esp32boxs3-screen; the old address redirects. The firmware file is `firmware/muse-esp32boxs3-screen.yaml`, the command line `tools/muse_screen.py`. Home Assistant keeps every entity of a renamed device: their unique ids come from the MAC and the entity name, not the device name. It does keep the old action names until the device's entry is reloaded once.
+- The web version is called Muse Web Screen.
 
 ## 4.1.0, 7 October 2026
 

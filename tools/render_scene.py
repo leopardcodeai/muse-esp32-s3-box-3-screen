@@ -13,7 +13,7 @@ and lets the scene files be documented with pictures.
 
 Pitfalls:
   * Fonts: the box draws Inter (weights 500/600/700) and Material Design Icons 7.4.47. The
-    TTFs are not in the repo: `esphome compile firmware/muse-box.yaml` downloads them into
+    TTFs are not in the repo: `esphome compile firmware/muse-esp32boxs3-screen.yaml` downloads them into
     firmware/.esphome/font/, where this tool looks first (override with MUSE_FONT_DIR and
     MUSE_ICON_FONT, or --font-dir and --icon-font).
   * Muse's figure (``muse``, ``avatar``) is Meta's private artwork. This tool draws a
@@ -66,7 +66,7 @@ ICON_PX = [24, 46]  # s l
 
 HERE = Path(__file__).resolve().parent
 ESPHOME_FONTS = HERE.parent / "firmware" / ".esphome" / "font"  # where esphome compile caches the fonts
-FONT_HINT = ("run `esphome compile firmware/muse-box.yaml` once (it downloads Inter and the icon font into "
+FONT_HINT = ("run `esphome compile firmware/muse-esp32boxs3-screen.yaml` once (it downloads Inter and the icon font into "
              "firmware/.esphome/font/), or point MUSE_FONT_DIR and MUSE_ICON_FONT (or --font-dir and "
              "--icon-font) at them")
 

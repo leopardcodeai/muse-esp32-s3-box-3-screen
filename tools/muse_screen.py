@@ -16,13 +16,13 @@ Pitfalls:
   * `ask`, `choose` and `wait` block until a tap or their timeout (25 s, 60 s).
 Usage:
   export HA_TOKEN=...          # better: from a keychain, never in a file
-  tools/muse_box.py text "Hallo" "Die Box lebt."
-  tools/muse_box.py event klingel "Es klingelt" "Haustür"
-  tools/muse_box.py scene scenes/night.txt
-  tools/muse_box.py ask "Licht aus?"             # answers yes / no / pending
-  tools/muse_box.py timer "Pizza" "12 min"
-  tools/muse_box.py state
-  tools/muse_box.py --device my-box hw           # another device name
+  tools/muse_screen.py text "Hallo" "Die Box lebt."
+  tools/muse_screen.py event klingel "Es klingelt" "Haustür"
+  tools/muse_screen.py scene scenes/night.txt
+  tools/muse_screen.py ask "Licht aus?"             # answers yes / no / pending
+  tools/muse_screen.py timer "Pizza" "12 min"
+  tools/muse_screen.py state
+  tools/muse_screen.py --device my-box hw           # another device name
 """
 import argparse
 import json
@@ -31,7 +31,7 @@ import sys
 import urllib.error
 import urllib.request
 
-DEFAULT_DEVICE = "muse_box"
+DEFAULT_DEVICE = "muse_esp32boxs3_screen"
 
 
 def call(device, action, data, response=True):
@@ -55,7 +55,7 @@ def call(device, action, data, response=True):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--device", default=os.environ.get("MUSE_BOX_DEVICE", DEFAULT_DEVICE),
-                    help="the ESPHome device name with underscores (default muse_box)")
+                    help="the ESPHome device name with underscores (default muse_esp32boxs3_screen)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("status", help="status: ready, listening, thinking, speaking, error, off; optional label")
     s.add_argument("status"); s.add_argument("label", nargs="?", default="")

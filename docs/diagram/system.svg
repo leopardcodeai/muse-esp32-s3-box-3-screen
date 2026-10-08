@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  System diagram of Muse ESP32BoxS3 Toy. Hand-written, self-contained SVG.
+  System diagram of Muse ESP32BoxS3 Screen. Hand-written, self-contained SVG.
   Palette and measures: LeopardCode.AI design system (company-brain/DESIGN.md,
   tools/design_agent/tokens.css, light scheme). Typeface: Helvetica Neue first,
   because cairosvg uses the first family in the list and the Mac has it; the
@@ -8,7 +8,7 @@
   Re-render the PNG: see README.md in this folder.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-labelledby="t d">
-  <title id="t">Muse ESP32BoxS3 Toy: one assistant, many hands</title>
+  <title id="t">Muse ESP32BoxS3 Screen: one assistant, many hands</title>
   <desc id="d">Muse in Meta's datacenter talks to the Muse apps and to Home Assistant on a Raspberry Pi 5. Home Assistant drives the ESP32-S3-BOX-3 over the encrypted ESPHome API on the home network; the box listens, shows cards and speaks. House devices trigger cards through Home Assistant; the box fetches maps, pictures and music streams from open data on the internet.</desc>
   <style>
     text { font-family: 'Helvetica Neue', Helvetica, Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
@@ -46,7 +46,7 @@
   <rect x="0" y="0" width="1600" height="900" fill="#ffffff"/>
 
   <!-- ============ header ============ -->
-  <text class="h1" x="48" y="60" letter-spacing="-0.7">Muse ESP32BoxS3 Toy: one assistant, many hands</text>
+  <text class="h1" x="48" y="60" letter-spacing="-0.7">Muse ESP32BoxS3 Screen: one assistant, many hands</text>
   <text class="h1sub" x="48" y="92">Muse thinks in Meta's cloud; Home Assistant and an ESP32-S3-BOX-3 give it a screen, a voice, ears and sensors in the house</text>
 
   <!-- legend: the two kinds of arrows -->
@@ -159,7 +159,7 @@
 
   <!-- ============ 4. ESP32-S3-BOX-3 ============ -->
   <rect class="panel" x="948" y="200" width="280" height="440" rx="16"/>
-  <text class="ptitle" x="968" y="232">ESP32-S3-BOX-3, the toy</text>
+  <text class="ptitle" x="968" y="232">ESP32-S3-BOX-3, the screen</text>
   <text class="psub" x="968" y="254">input and output in one small box</text>
   <!-- the box: body, two microphones, screen with a card, speaker, dock -->
   <path class="devline" d="M1068 264 V270 M1108 264 V270"/>
@@ -267,7 +267,7 @@
   <text class="small" x="1173" y="805" text-anchor="middle">schedule</text>
 
   <!-- ============ footer ============ -->
-  <text class="foot" x="48" y="878">Source and documentation: github.com/leopardcodeai/muse-esp32boxs3-toy</text>
+  <text class="foot" x="48" y="878">Source and documentation: github.com/leopardcodeai/muse-esp32boxs3-screen</text>
   <!-- start-anchored on purpose: cairosvg misplaces tspans inside an end-anchored text -->
   <text class="mark" x="1451" y="878">Leopard<tspan fill="#005bbb">Code</tspan>.AI</text>
 </svg>

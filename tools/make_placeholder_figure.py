@@ -11,7 +11,7 @@ Why: the firmware was written for the character of the Muse app, whose animation
 Pitfalls:
   * Frame counts and sizes matter for flash: every 160 x 160 frame costs 51 KB of flash
     as RGB565; 82 frames are about 4.2 MB. Keep the counts.
-  * The page colour (243, 243, 243) must match MUSE_BG in muse-box.yaml; every frame fades
+  * The page colour (243, 243, 243) must match MUSE_BG in muse-esp32boxs3-screen.yaml; every frame fades
     into it at the edges so the figure sits on the page without a visible square.
   * idle, wave, working and making loop forwards and backwards on the box (ping-pong);
     confetti plays once and holds its last frame.

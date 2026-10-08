@@ -1,7 +1,7 @@
 # Someone comes home (presence from the router or the companion app): Muse waves, a
 # card with their name. The 10 minutes away keep a phone that drops off the Wi-Fi for a
 # minute from "coming home" again and again.
-alias: "Muse Box: someone comes home"
+alias: "Muse Screen: someone comes home"
 mode: queued
 triggers:
   - trigger: state
@@ -13,7 +13,7 @@ conditions:
   - condition: template
     value_template: "{{ trigger.from_state.state == 'not_home' and (now() - trigger.from_state.last_changed).total_seconds() > 600 }}"
 actions:
-  - action: esphome.muse_box_muse_show_event
+  - action: esphome.muse_esp32boxs3_screen_muse_show_event
     continue_on_error: true
     data:
       icon: zuhause

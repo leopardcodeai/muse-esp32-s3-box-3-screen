@@ -2,7 +2,7 @@
 
 Any assistant that can call Home Assistant can drive the box: Meta's Muse (through its
 Home Assistant connection and a long-lived token), Claude (through the Home Assistant MCP
-server or `tools/muse_box.py`), a Grok bot, Dots, Spark, a cron job. The box does not
+server or `tools/muse_screen.py`), a Grok bot, Dots, Spark, a cron job. The box does not
 know which one is talking. Give the assistant the text below once; it is written to be
 pasted into a chat or a system prompt. The German version is what Muse got; the English
 one says the same.
@@ -11,11 +11,11 @@ one says the same.
 
 ```text
 You have a small display with a speaker and a microphone in the house: an ESP32-S3-BOX-3
-running "Muse ESP32BoxS3 Toy", reachable through Home Assistant as device "muse-box". Use
+running "Muse ESP32BoxS3 Screen", reachable through Home Assistant as device "muse-esp32boxs3-screen". Use
 it generously: show what you answer, ask back with buttons, draw your own pictures.
 
 RULES
-- Every call is a Home Assistant action esphome.muse_box_<action>. Every field is
+- Every call is a Home Assistant action esphome.muse_esp32boxs3_screen_<action>. Every field is
   mandatory; send "" where nothing is meant.
 - Cards queue: while one is on screen the next waits (the bar shows "+N"); a tap on the
   display shows the next one. A card with the same title as the one on screen replaces it.
@@ -33,7 +33,7 @@ RULES
   says more.
 - At the end: muse_set_status with status "ready".
 - You can speak through the box: tts.speak with media_player_entity_id
-  media_player.muse_box_speaker.
+  media_player.muse_esp32boxs3_screen_speaker.
 
 2. READY-MADE CARDS
 - muse_show_event: icon, title, message. icon: klingel, garage, garage_zu,
@@ -64,7 +64,7 @@ RULES
   "yes" | "no" | "pending"}.
 - muse_choose: question, options (2 to 4 lines). Answers the chosen text or "pending".
 - Both wait 25 s for a tap; on "pending" the question stays 2 min, the answer then lands
-  in sensor.muse_box_answer as "yes: <question>", "Jazz: <question>" or "none: ...".
+  in sensor.muse_esp32boxs3_screen_answer as "yes: <question>", "Jazz: <question>" or "none: ...".
 - muse_wait_answer: seconds (up to 60). Waits for the next tap, also on buttons in your
   scenes. Answers {"answered": true|false, "answer": "..."}.
 - Use questions for quick confirmations: "Lights off in the living room?", "Which playlist?"
@@ -115,11 +115,11 @@ press there: the box listens. The switch on top mutes the microphones ("Mikrofon
 
 ```text
 Du hast im Haus ein kleines Display mit Lautsprecher und Mikrofon: eine ESP32-S3-BOX-3 mit
-"Muse ESP32BoxS3 Toy", erreichbar über Home Assistant als Gerät "muse-box". Nutze es
+"Muse ESP32BoxS3 Screen", erreichbar über Home Assistant als Gerät "muse-esp32boxs3-screen". Nutze es
 großzügig: Zeig, was du antwortest, frag mit Tasten zurück, mal eigene Bilder.
 
 REGELN
-- Jeder Aufruf ist eine Home-Assistant-Aktion esphome.muse_box_<aktion>. Jedes Feld ist
+- Jeder Aufruf ist eine Home-Assistant-Aktion esphome.muse_esp32boxs3_screen_<aktion>. Jedes Feld ist
   Pflicht; sende "", wo nichts gemeint ist.
 - Karten stellen sich an: Läuft eine Karte, wartet die nächste (oben "+N"); ein Tipp auf
   das Display zeigt die nächste. Gleicher Titel wie die gezeigte Karte ersetzt sie. Jede
@@ -136,7 +136,7 @@ REGELN
 - Antwort: muse_show_text (title, message), oder eine Szene (Teil 5), wenn ein Bild mehr sagt.
 - Zum Schluss muse_set_status mit status "ready".
 - Sprechen kannst du über die Box: tts.speak mit media_player_entity_id
-  media_player.muse_box_speaker.
+  media_player.muse_esp32boxs3_screen_speaker.
 
 2. FERTIGE KARTEN
 - muse_show_event: icon, title, message. icon: klingel, garage, garage_zu,
@@ -166,7 +166,7 @@ REGELN
   "yes"|"no"|"pending"}.
 - muse_choose: question, options (2 bis 4 Zeilen). Antwortet mit dem gewählten Text oder "pending".
 - Beide warten 25 s auf einen Tipp; bei "pending" steht die Frage noch 2 min, die Antwort
-  liegt dann in sensor.muse_box_answer ("yes: <Frage>", "Jazz: <Frage>", "none: …").
+  liegt dann in sensor.muse_esp32boxs3_screen_answer ("yes: <Frage>", "Jazz: <Frage>", "none: …").
 - muse_wait_answer: seconds (bis 60). Wartet auf den nächsten Tipp, auch auf Tasten in
   deinen Szenen. Antwortet {"answered": true|false, "answer": "…"}.
 - Nutze Fragen für Rückfragen: "Licht im Wohnzimmer aus?", "Welche Playlist?".
@@ -220,6 +220,6 @@ ab ("Mikrofon aus").
 | Assistant | How it reaches the box |
 |---|---|
 | Meta Muse | its Home Assistant connection (a long-lived token); paste the German text into a chat with Muse once, it remembers |
-| Claude (Code, Desktop, app) | the Home Assistant MCP server, or `tools/muse_box.py` from a shell |
-| Grok, Dots, Spark, other agents | any that can call Home Assistant's REST API (`POST /api/services/esphome/muse_box_<action>`, header `Authorization: Bearer <token>`), or `tools/muse_box.py` |
+| Claude (Code, Desktop, app) | the Home Assistant MCP server, or `tools/muse_screen.py` from a shell |
+| Grok, Dots, Spark, other agents | any that can call Home Assistant's REST API (`POST /api/services/esphome/muse_esp32boxs3_screen_<action>`, header `Authorization: Bearer <token>`), or `tools/muse_screen.py` |
 | Home Assistant itself | automations and scripts (`homeassistant/`), and its voice assistant for the timers and the conversation on the box |

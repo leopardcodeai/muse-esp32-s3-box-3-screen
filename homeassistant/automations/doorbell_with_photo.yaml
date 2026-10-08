@@ -1,14 +1,14 @@
 # Doorbell: the card at once, the door photo as soon as another automation has saved it
 # to /config/www/doorbell_latest.jpg. Adjust the three entity ids; the box name is the
-# device name with underscores (muse_box for "muse-box").
-alias: "Muse Box: doorbell"
+# device name with underscores (muse_esp32boxs3_screen for "muse-esp32boxs3-screen").
+alias: "Muse Screen: doorbell"
 mode: restart
 triggers:
   - trigger: state
     entity_id: binary_sensor.doorbell_pressed
     to: "on"
 actions:
-  - action: esphome.muse_box_muse_show_event
+  - action: esphome.muse_esp32boxs3_screen_muse_show_event
     continue_on_error: true
     data:
       icon: klingel
@@ -16,7 +16,7 @@ actions:
       message: "Haustür, {{ now().strftime('%H:%M') }}"
   - delay:
       seconds: 3
-  - action: esphome.muse_box_muse_show_image
+  - action: esphome.muse_esp32boxs3_screen_muse_show_image
     continue_on_error: true
     data:
       title: "Es klingelt"

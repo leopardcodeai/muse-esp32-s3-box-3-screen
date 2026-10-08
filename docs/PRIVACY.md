@@ -15,7 +15,7 @@ Nothing is sent to LeopardCode.AI, and the firmware has no telemetry.
 
 The user agent of the box's own picture task names this repository, as the tile and
 routing services ask for a way to reach whoever sends requests
-(`Muse-ESP32BoxS3-Toy/4.1 (ESPHome; +https://github.com/leopardcodeai/muse-esp32boxs3-toy)`).
+(`Muse-ESP32BoxS3-Screen/4.2 (ESPHome; +https://github.com/leopardcodeai/muse-esp32boxs3-screen)`).
 Until 4.0 the map came as one picture from maps.wikimedia.org; its terms allow that for
 Wikimedia projects only, so 4.1 switched to tiles from a server you choose.
 

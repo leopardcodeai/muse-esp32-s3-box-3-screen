@@ -50,24 +50,24 @@ The first flash goes over USB; every later one goes over Wi-Fi (OTA).
 3. If the upload tool cannot talk to the box, put it into download mode by hand: hold
    BOOT (top left), press reset (top right) once, release BOOT. The screen stays dark in
    this mode; that is right.
-4. `esphome upload firmware/muse-box.yaml --device /dev/cu.usbmodem101` (your port).
+4. `esphome upload firmware/muse-esp32boxs3-screen.yaml --device /dev/cu.usbmodem101` (your port).
    The first upload also erases nothing you need; the demo firmware is simply replaced.
 5. Press reset or replug. The box boots into the new firmware in about 10 s and shows
    the figure with the "Bereit" pill once Wi-Fi is up.
 
 Wi-Fi: the credentials come from `firmware/secrets.yaml`. If the box cannot find the
 network (wrong password, 5 GHz only), it opens its own access point named like the
-device (`muse-box`) with the `ap_password` from the secrets; connect to it and a
+device (`muse-esp32boxs3-screen`) with the `ap_password` from the secrets; connect to it and a
 captive portal lets you pick a network.
 
 ## 4. Home Assistant
 
 Home Assistant finds the box by mDNS within a minute: Settings, Devices and services,
-the ESPHome integration offers "muse-box". Enter the API encryption key from
+the ESPHome integration offers "muse-esp32boxs3-screen". Enter the API encryption key from
 `secrets.yaml`. From then on the box is a device with these entities: presence
 (radar), temperature, humidity, battery, Wi-Fi signal, the backlight, the speaker (a
 media player), the mute switch, the top button, the answer sensor, and the night calm
-switch; plus all `esphome.muse_box_muse_*` actions in Developer tools, Actions.
+switch; plus all `esphome.muse_esp32boxs3_screen_muse_*` actions in Developer tools, Actions.
 
 The voice assistant needs an Assist pipeline (Settings, Voice assistants): speech to
 text, a conversation agent, text to speech. The box's `assist_satellite` entity uses the
@@ -77,9 +77,9 @@ Assistant.
 
 ## 5. Keep it running
 
-- Flash over the air: `esphome upload firmware/muse-box.yaml --device muse-box.local`,
+- Flash over the air: `esphome upload firmware/muse-esp32boxs3-screen.yaml --device muse-esp32boxs3-screen.local`,
   about 60 s; the box keeps running until the last second.
-- Read the log after every flash: `esphome logs firmware/muse-box.yaml --device muse-box.local`.
+- Read the log after every flash: `esphome logs firmware/muse-esp32boxs3-screen.yaml --device muse-esp32boxs3-screen.local`.
 - Updates of ESPHome come from PyPI or Homebrew; newer is better, and never update
   while a build runs.
 - The box reboots cleanly on power loss and keeps nothing it needs on the SD card.

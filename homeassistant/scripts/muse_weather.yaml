@@ -17,7 +17,7 @@ sequence:
           {% set ns.at = as_datetime(h.datetime).strftime('%H:%M') %}
         {% endfor %}
         {{ ns.at }}
-  - action: esphome.muse_box_muse_show_weather
+  - action: esphome.muse_esp32boxs3_screen_muse_show_weather
     data:
       condition: "{{ states('weather.home') }}"
       temperature: "{{ state_attr('weather.home', 'temperature') }}"
