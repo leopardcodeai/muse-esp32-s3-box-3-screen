@@ -6,6 +6,8 @@ The ESP32-S3-BOX-3 of the [Muse ESP32-S3-BOX-3 Screen](https://github.com/leopar
 
 Plain ES modules, no build step, no npm dependencies. Everything in `web/` is English (code, comments, docs); the strings on the display stay German like the box's ([docs/LOCALIZATION.md](../docs/LOCALIZATION.md)).
 
+No box, and you want to see it work with your Home Assistant today: [../docs/TRY_WITHOUT_A_BOX.md](../docs/TRY_WITHOUT_A_BOX.md).
+
 ## Six ways to run it
 
 1. **The hosted page.** https://muse-web-screen.vercel.app, a static copy of this folder on Vercel (see [Hosting on Vercel](#hosting-on-vercel)). A first visit without stored settings lands in demo mode (`index.html?demo=1`); "Demo aus" and the settings lead out of it. HTTPS, so Chrome offers "Install" and the wake lock works; reaching a Home Assistant in the LAN from there has limits, see [Connecting from the hosted page](#connecting-from-the-hosted-page).
