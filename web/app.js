@@ -253,7 +253,10 @@ function connect() {
 
 const figureStatus = $("figure-status");
 async function useFigure() {
-  const url = settings.figureSource === "url" ? settings.figureUrl : "";
+  // ?figure=placeholder shows the project's own figure for this visit only, whatever the
+  // setting says: screenshots for the public repository never carry Meta's artwork.
+  const forcePlaceholder = params.get("figure") === "placeholder";
+  const url = !forcePlaceholder && settings.figureSource === "url" ? settings.figureUrl : "";
   figureStatus.textContent = url ? "lädt …" : "";
   const r = await figure.use(url);
   if (r.stale) return;

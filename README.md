@@ -68,6 +68,16 @@ Every picture below was rendered from the scene files in [`scenes/`](scenes/) by
 | <img src="docs/previews/menu.gif" width="240" alt="A menu: four buttons appearing in turn"> | <img src="docs/previews/progress.gif" width="240" alt="A progress scene with a bar and spinning stars"> | <img src="docs/previews/wink.gif" width="240" alt="A face that winks in two frames, typed text"> |
 | `scenes/menu.txt` | `scenes/progress.txt` | `scenes/wink.txt` |
 
+**The cards**, as the web twin draws them (each is one action, see [Actions](#actions)):
+
+<p align="center"><img src="docs/screens/cards.webp" width="800" alt="Six cards: the weather, the doorbell, a question with Yes and No, a tea timer, a shopping list, the day's appointments, each with the name of its action"></p>
+
+**On a Mac**, Muse Web Screen runs as an app window next to everything else and can float above it ([web/](web/), demo at [muse-web-screen.vercel.app](https://muse-web-screen.vercel.app)):
+
+<p align="center"><img src="docs/screens/mac-desktop.jpg" width="900" alt="A Mac desktop: Muse Web Screen as an app window with a birthday scene beside the repository on GitHub"></p>
+<p align="center"><img src="docs/screens/mac-windows.jpg" width="900" alt="Three Muse Web Screen windows: a menu scene with four buttons, a birthday scene, a reminder card"></p>
+<p align="center"><sub>Screenshots of 8 October 2026, taken shortly before the repository was renamed; tab titles and bookmarks blurred. The figure is the project's placeholder: Meta's Muse artwork is not part of this repository, on your own Mac you can show your own frames (web/README.md).</sub></p>
+
 What the renderer cannot show is the box itself: a real one shows Meta's Muse figure if you own the Muse app (see [Make it yours](#make-it-yours)), the photos and live views of your own cameras, and the voice. Photos of the box in a real house are welcome as pull requests to `docs/photos/`.
 
 ## How it fits together
