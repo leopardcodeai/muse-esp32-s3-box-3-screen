@@ -77,7 +77,7 @@ Every picture below was rendered from the scene files in [`scenes/`](scenes/) by
 <p align="center"><img src="docs/screens/mac-desktop.jpg" width="900" alt="A Mac desktop: Muse Web Screen as an app window with a birthday scene beside the repository on GitHub"></p>
 <p align="center">How to set it up as an app with your own figure and icon, borderless and on top: <a href="docs/MAC_APP.md">docs/MAC_APP.md</a>.</p>
 <p align="center"><img src="docs/screens/mac-windows.jpg" width="900" alt="Three Muse Web Screen windows: a menu scene with four buttons, a birthday scene, a reminder card"></p>
-<p align="center"><sub>Screenshots of 8 October 2026, taken shortly before the repository was renamed; tab titles and bookmarks blurred. They still show the flat figure the project drew in code before its generated one. Meta's Muse artwork is not part of this repository; on your own Mac you can show your own frames (web/README.md).</sub></p>
+<p align="center"><sub>Screenshots of 8 October 2026, taken shortly before the repository was renamed; tab titles and bookmarks blurred. The display area was rendered again afterwards with the project's current figure, by Muse Web Screen itself (same scene, same card, clock fixed to 04:53), and set into the window; everything around it is the original screenshot. Meta's Muse artwork is not part of this repository; on your own Mac you can show your own frames (web/README.md).</sub></p>
 
 What the renderer cannot show is the box itself: a real one shows Meta's Muse figure if you own the Muse app (see [Make it yours](#make-it-yours)), the photos and live views of your own cameras, and the voice. Photos of the box in a real house are welcome as pull requests to `docs/photos/`.
 
