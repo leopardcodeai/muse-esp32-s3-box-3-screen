@@ -39,6 +39,19 @@ html, body {
 
 html.kiosk #page, html.pip #page { inset: 0; }
 html.kiosk #toolbar { display: none; }
+/* Nur Display (setting `bare` or ?bare=1): the display fills the window, the letterbox
+   takes the colour of the display's own edge (app.js samples it), and the toolbar only
+   shows while the pointer is near the bottom edge. */
+html.bare, html.bare body { background: var(--edge, var(--page)); }
+html.bare #page { inset: env(titlebar-area-height, 0px) 0 0 0; }
+/* Installed in Chrome with Window Controls Overlay: the title bar is the page's own; only the
+   three window buttons stay. The strip under them takes the display's edge colour and moves
+   the window; the display starts below it. Elsewhere the env() values are 0. */
+#titlebar { position: fixed; left: 0; right: 0; top: 0; height: env(titlebar-area-height, 0px); -webkit-app-region: drag; app-region: drag; background: var(--edge, var(--page)); }
+#page { top: env(titlebar-area-height, 0px); }
+html.bare #stage { box-shadow: none; background: var(--edge, var(--page)); }
+html.bare #toolbar { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+html.bare.show-bar #toolbar { opacity: 1; pointer-events: auto; }
 html.no-cursor, html.no-cursor * { cursor: none !important; }
 
 #stage {

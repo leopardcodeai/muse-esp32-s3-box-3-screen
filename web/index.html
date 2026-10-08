@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="titlebar" aria-hidden="true"></div>
   <main id="page">
     <div id="stage">
       <canvas id="screen" width="320" height="240" aria-label="Muse display"></canvas>
@@ -74,6 +75,7 @@
       </label>
       <label class="check"><input name="integer" type="checkbox"> Nur ganzzahlig vergrößern (pixelgenau)</label>
       <label class="check"><input name="sound" type="checkbox"> Töne (Timer, Frage)</label>
+      <label class="check"><input name="bare" type="checkbox"> Nur Display: ohne Leiste und Rand (die Leiste erscheint, wenn die Maus an den unteren Rand fährt; Tasten: F schweben, K Vollbild, E Einstellungen)</label>
       <menu>
         <button type="button" id="settings-cancel">Abbrechen</button>
         <button type="submit">Speichern</button>

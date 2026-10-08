@@ -28,6 +28,12 @@ Plain ES modules, no build step, no npm dependencies. Everything in `web/` is En
 
 The four buttons under the display: **Float** (always on top), **Kiosk** (full screen), **Demo** (switches demo mode on or off) and **Einstellungen** (the settings). For the browser console there is `muse.dispatch("show_text", {title: "Hallo", message: "Welt"})`, with every action of the table below, and `muse.fps(10)` to switch the frame rate until the next reload.
 
+## Your own screen on your Mac (local, with your own figure)
+
+`web/tools/serve_local.sh --install` serves this folder at http://localhost:8321 from a LaunchAgent (127.0.0.1 only, started at login). From there the page may open `ws://` to Home Assistant on your LAN, which a page from https may not. Put your own figure frames into `web/local/` (git and Vercel ignore that folder; for Meta's Muse frames run `tools/make_muse_assets.py` and copy `firmware/figure/muse_*.png`), and set the figure source to `http://localhost:8321/local`.
+
+**Nur Display** (setting, or `?bare=1`): no toolbar and no frame; the strip beside the display takes the colour of the display's edge, and the toolbar appears while the pointer is near the bottom edge. Keys: F floats the display above every window (Picture in Picture), K full screen, E settings. Installed from Chrome ("Install page as app"), the app draws into its own title bar (Window Controls Overlay) and only the three window buttons remain. In Chrome the floating window stays clickable (Document Picture-in-Picture); Safari can float only a video of the display, which cannot be clicked.
+
 ## Settings
 
 The settings panel opens by itself until a URL and a token are stored (outside demo mode). Everything is kept in the `localStorage` of that browser on that machine, nowhere else: the token never leaves the page except in the auth message to Home Assistant, also on the hosted page, whose server only ever delivers the static files. A long-lived access token made for this display alone (Home Assistant profile page, Security, Long-lived access tokens [5]) is wise: it can be revoked without touching anything else.

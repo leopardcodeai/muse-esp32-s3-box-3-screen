@@ -74,7 +74,16 @@ export class FigureSource {
     this.loading = true;
     const results = await Promise.all(FIGURE_NAMES.map(async (name) => {
       try {
-        const res = await this.fetchImpl(frameUrl(this.url, name), { mode: "cors", cache: "no-cache", credentials: "omit" });
+        // One retry: six requests at once against a small local server lost one now and
+        // then ("Failed to fetch" for the avatar, 08.10.2026); the second try got it.
+        const get = () => this.fetchImpl(frameUrl(this.url, name), { mode: "cors", cache: "no-cache", credentials: "omit" });
+        let res;
+        try {
+          res = await get();
+        } catch {
+          await new Promise((r) => setTimeout(r, 300));
+          res = await get();
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const frames = await this.decode(new Uint8Array(await res.arrayBuffer()));
         return [name, frames, null];

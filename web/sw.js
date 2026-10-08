@@ -9,7 +9,7 @@
 // page serves this file with Cache-Control: no-cache (vercel.json), so a new version is
 // seen on the next visit. The owner's figure frames are never cached here: they come
 // from another origin, which this worker leaves alone.
-const VERSION = "muse-web-screen-1.1.0";
+const VERSION = "muse-web-screen-1.2.0";
 const SHELL = [
   "./", "./index.html", "./style.css", "./manifest.webmanifest",
   "./app.js", "./display.js", "./cards.js", "./draw.js", "./render.js", "./figure.js", "./scene.js", "./icons.js",

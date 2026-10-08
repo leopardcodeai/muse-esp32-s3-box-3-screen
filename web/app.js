@@ -119,7 +119,48 @@ function render() {
   display.tick();
   display.render();
   lastDraw = performance.now();
+  if (bare) sampleEdge(lastDraw);
 }
+
+// ------------------------------------------------------------ Nur Display --
+
+// The window shows nothing but the display: no toolbar until the pointer nears the bottom
+// edge, no frame, and the strip beside a display that does not fill the window takes the
+// colour of the display's own top left pixel, read four times a second.
+let bare = false;
+let lastEdge = 0;
+function applyBare() {
+  bare = settings.bare || params.get("bare") === "1";
+  document.documentElement.classList.toggle("bare", bare);
+  if (!bare) document.documentElement.classList.remove("show-bar");
+  fit();
+}
+function sampleEdge(now) {
+  if (now - lastEdge < 250) return;
+  lastEdge = now;
+  try {
+    const c = $("screen");
+    const [r, g, b] = c.getContext("2d").getImageData(1, 1, 1, 1).data;
+    document.documentElement.style.setProperty("--edge", `rgb(${r}, ${g}, ${b})`);
+  } catch {
+    // A picture from another origin can taint the canvas; the page colour stays then.
+  }
+}
+let barTimer = null;
+document.addEventListener("pointermove", (ev) => {
+  if (!bare) return;
+  const near = ev.clientY > window.innerHeight - 72;
+  document.documentElement.classList.toggle("show-bar", near);
+  clearTimeout(barTimer);
+  if (near) barTimer = setTimeout(() => document.documentElement.classList.remove("show-bar"), 4000);
+});
+document.addEventListener("keydown", (ev) => {
+  if (dialog.open || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  const k = ev.key.toLowerCase();
+  if (k === "f") $("btn-float").click();
+  else if (k === "k") $("btn-kiosk").click();
+  else if (k === "e" || k === ",") openSettings();
+});
 let loopGeneration = 0;
 function startLoop() {
   const generation = ++loopGeneration;
@@ -249,6 +290,7 @@ function openSettings() {
   form.figureUrl.value = settings.figureUrl;
   form.integer.checked = settings.integer;
   form.sound.checked = settings.sound;
+  form.bare.checked = settings.bare;
   updateDialog();
   dialog.showModal();
 }
@@ -268,6 +310,7 @@ form.addEventListener("submit", (ev) => {
     figureUrl: form.figureUrl.value.trim(),
     integer: form.integer.checked,
     sound: form.sound.checked,
+    bare: form.bare.checked,
   };
   if (!saveSettings(storage(), settings)) say("Dieser Browser speichert nichts: die Einstellungen gelten nur bis zum Neuladen.");
   dialog.close();
@@ -280,6 +323,7 @@ form.addEventListener("submit", (ev) => {
   }
   display.name = settings.name;
   sounds.enabled = settings.sound;
+  applyBare();
   if (settings.fps !== before.fps) setFps(settings.fps); // a ?fps= of the URL holds until the setting changes
   else fit();
   if (settings.figureSource !== before.figureSource || settings.figureUrl !== before.figureUrl) useFigure();
@@ -402,7 +446,7 @@ async function start() {
   await Promise.all(allFonts().map((f) => document.fonts.load(f).catch(() => null)));
   await document.fonts.ready;
   fontsReady = true;
-  fit();
+  applyBare();
   window.addEventListener("resize", fit);
   watchPixelRatio();
   startLoop();

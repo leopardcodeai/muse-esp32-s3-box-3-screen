@@ -15,7 +15,7 @@ export const SETTINGS_KEY = "muse-web-settings";
 export const FIGURE_SOURCES = ["placeholder", "url"];
 export const DEFAULTS = Object.freeze({
   url: "", token: "", device: DEFAULT_DEVICE, inputText: "", name: "Muse", integer: false, sound: true,
-  fps: DEFAULT_FPS, figureSource: "placeholder", figureUrl: "",
+  fps: DEFAULT_FPS, figureSource: "placeholder", figureUrl: "", bare: false,
 });
 
 // The stored settings over the defaults, cleaned.
@@ -30,6 +30,7 @@ export function loadSettings(storage) {
   s.device = String(s.device || "").trim() || DEFAULT_DEVICE;
   s.fps = normaliseFps(s.fps);
   if (!FIGURE_SOURCES.includes(s.figureSource)) s.figureSource = DEFAULTS.figureSource;
+  s.bare = s.bare === true;
   return s;
 }
 
