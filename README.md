@@ -7,7 +7,7 @@ One assistant, many hands. An Espressif ESP32-S3-BOX-3 (a 2.4 inch touch screen,
 
 The whole thing is one ESPHome configuration, five C++ headers and a handful of tools. Everything that differs from house to house is a substitution or a secret.
 
-> **Status, 7 October 2026:** firmware 4.1.0 runs on one ESP32-S3-BOX-3 with the BOX-3-SENSOR dock, built with ESPHome 2026.9.1 on ESP-IDF 5.5.5 and confirmed with Home Assistant 2026.9.4. Flash 95 % of the 8 MB app partition, RAM 49 % of the 342 KB of static RAM, three `-Wformat-truncation` notes from the compiler in the display lambda (harmless, listed in the changelog), no warning in the box's log after boot. What changed when: [CHANGELOG.md](CHANGELOG.md). Every number in this file was measured on that box; the sources at the end carry the rest.
+> **Status, 7 October 2026:** firmware 4.1.0 runs on one ESP32-S3-BOX-3 with the BOX-3-SENSOR dock, built with ESPHome 2026.9.1 on ESP-IDF 5.5.5 and confirmed with Home Assistant 2026.9.4. Flash 95 % of the 8 MB app partition, RAM 49 % of the 342 KB of static RAM, no compiler warning from this project's own code, no warning in the box's log after boot. What changed when: [CHANGELOG.md](CHANGELOG.md). Every number in this file was measured on that box; the sources at the end carry the rest.
 
 ## Contents
 

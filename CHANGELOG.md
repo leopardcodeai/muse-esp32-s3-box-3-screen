@@ -8,7 +8,7 @@ The version is `esphome: project: version` in `firmware/muse-box.yaml`; the box 
 - New substitutions `doorbell_image` and `figure_prefix`; every entity and every TV button has an id, so an overlay can rename it with `!extend` (`docs/HOME_OVERLAY.md`).
 - `tools/render_scene.py`: a host renderer of the drawing language, PNG and GIF, with the placeholder figure; the previews in `docs/previews/` come from it. `tools/check_private.py` ignores git-ignored files.
 - First public release of the repository as a whole.
-- Known: three `-Wformat-truncation` notes from the compiler in the display lambda (the timer and the info screen format into small buffers); they predate 4.1 and are harmless.
+- Three `-Wformat-truncation` notes from the compiler in the display lambda, older than 4.1, are gone: the timer and the info screen format into wider buffers.
 
 ## 4.0.0, 7 October 2026
 

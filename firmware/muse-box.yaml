@@ -1406,7 +1406,7 @@ display:
       int badge_x = 68;
       const auto *soonest = muse::timer_soonest();
       if (soonest != nullptr && id(muse_mode) != 11) {
-        char left[12];
+        char left[24];  // "h:mm:ss" at most, sized so the compiler stops counting
         if (soonest->left >= 3600)
           snprintf(left, sizeof(left), "%u:%02u:%02u", (unsigned) soonest->left / 3600,
                    (unsigned) (soonest->left / 60) % 60, (unsigned) soonest->left % 60);
@@ -1420,7 +1420,7 @@ display:
       }
       const size_t waiting = muse::queue().size();
       if (waiting > 0 && id(muse_mode) != 0) {
-        char more[8];
+        char more[16];
         snprintf(more, sizeof(more), "+%u", (unsigned) waiting);
         const int bw = muse::text_width(it, more, id(m_small)) + 14;
         muse::round_rect(it, badge_x, 8, bw, 19, 9, Color(255, 149, 0), BG);
@@ -1746,7 +1746,7 @@ display:
         muse::ring_arc(it, 160, 140, 74, 65, 0, 360, SHADOW, BG);
         const float share = tm->total > 0 ? (float) tm->left / (float) tm->total : 0.0f;
         if (share > 0.0f) muse::ring_arc(it, 160, 140, 74, 65, 0, 360.0f * share, RING, BG);
-        char left[12];
+        char left[24];
         if (tm->left >= 3600)
           snprintf(left, sizeof(left), "%u:%02u:%02u", (unsigned) tm->left / 3600, (unsigned) (tm->left / 60) % 60,
                    (unsigned) tm->left % 60);
