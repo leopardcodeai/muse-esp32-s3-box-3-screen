@@ -18,7 +18,7 @@ substitutions:
   # The still picture of your doorbell (or any camera) under Home Assistant's www folder,
   # shown by muse_show_image with an empty url.
   doorbell_image: "/local/doorbell_latest.jpg"
-  # "" draws the placeholder figure from figure/; "muse_" the animations that
+  # "" draws the project's own figure from figure/; "muse_" the animations that
   # tools/make_muse_assets.py cuts out of the Muse app as figure/muse_*.png (Meta's
   # artwork: .gitignore keeps them out of the repository, never commit them).
   figure_prefix: ""
@@ -1121,10 +1121,11 @@ binary_sensor:
 # DISPLAY
 # =============================================================================
 # The figure: figure/*.png, 160 x 160 animated PNGs plus a 72 x 72 avatar. The repo
-# ships a neutral placeholder character (tools/make_placeholder_figure.py). With the
-# Muse app installed, tools/make_muse_assets.py cuts Muse's own animations into the
-# same files; those are Meta's artwork and must never be committed (tools/check_private.py
-# refuses). The page background 243,243,243 is the colour every frame fades into.
+# ships the project's own character (tools/make_figure.py, from the generated poses in
+# tools/figure_source/). With the Muse app installed, tools/make_muse_assets.py cuts
+# Muse's own animations into figure/muse_*.png; those are Meta's artwork and must never
+# be committed (tools/check_private.py refuses). The page background 243,243,243 is the
+# colour every frame fades into.
 # MUSE v3 (07.10.2026): weather icons from Meteocons (MIT), built by
 # make_muse_icons.py into icons/ (committed, licence beside them). Their order
 # is muse::Weather.

@@ -114,3 +114,47 @@ def test_gif_merges_frames_that_hold_still(tmp_path):
             im.seek(i)
             total += im.info["duration"]
         assert total == 2000
+
+
+FIGURE = Path(__file__).resolve().parent.parent / "firmware" / "figure"
+
+
+def test_figure_steps_like_the_box():  # muse.h, FIGURE: t / 160, forwards and back; confetti once
+    assert [rs.figure_index("idle", i * 160, 16) for i in range(32)] == list(range(16)) + list(range(14, -1, -1)) + [1]
+    assert rs.figure_index("idle", 159, 16) == 0 and rs.figure_index("idle", 160, 16) == 1
+    assert rs.figure_index("avatar", 5000, 1) == 0
+    assert rs.figure_index("confetti", 0, 18) == 0 and rs.figure_index("confetti", 100000, 18) == 17
+
+
+def test_the_figure_comes_from_the_frames_the_box_embeds():
+    # No fonts needed: a scene with the figure only. The pixel in the middle of the picture is the
+    # file's pixel, at the frame the box shows at that time.
+    clock = rs.dt.datetime(2026, 10, 7, 21, 30)
+    with Image.open(FIGURE / "idle.png") as im:
+        n = im.n_frames
+        im.seek(0)
+        first = im.convert("RGB").getpixel((80, 70))
+        im.seek(n - 2)
+        back = im.convert("RGB").getpixel((80, 70))
+    frames = rs.figure_frames("idle")
+    assert frames is not None and len(frames) == n == 16
+    scene = rs.parse("muse 160 110 idle")
+    assert rs.draw_scene(scene, 0, clock, None).getpixel((160, 100)) == first
+    assert rs.draw_scene(scene, n * 160, clock, None).getpixel((160, 100)) == back, "on the way back at step 16"
+    with Image.open(FIGURE / "avatar.png") as av:
+        face = av.convert("RGB").getpixel((36, 36))
+    assert rs.draw_scene(rs.parse("avatar 100 100"), 0, clock, None).getpixel((100, 100)) == face
+
+
+def test_the_round_frame_shows_what_lies_below():
+    clock = rs.dt.datetime(2026, 10, 7, 21, 30)
+    im = rs.draw_scene(rs.parse("bg #000000\nmuse 160 120 wave r=40"), 0, clock, None)
+    assert im.getpixel((160 - 60, 120)) == (0, 0, 0), "outside the disc of radius 40"
+    assert im.getpixel((160, 120)) != (0, 0, 0), "inside it, the figure"
+
+
+def test_without_the_files_a_coded_stand_in_draws(tmp_path):
+    assert rs.figure_frames("idle", tmp_path) is None
+    layer = rs.new_layer(rs.SS)
+    rs.draw_figure(layer, 160, 120, 80, "idle", 0, folder=tmp_path)
+    assert layer.getbbox() is not None, "the stand-in drew something"

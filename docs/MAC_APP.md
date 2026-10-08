@@ -46,7 +46,7 @@ Press **E** in the app (or the *Einstellungen* button):
 | Home Assistant URL | the LAN address, for example `http://homeassistant.local:8123` |
 | Long-lived access token | create one for this screen only: Home Assistant, your profile, *Security*, *Long-lived access tokens*. Paste it yourself; it stays in this browser's storage on this Mac |
 | Device name | `muse_esp32boxs3_screen`, or the name your box has (the part before `_muse_` in its actions) |
-| Figure source | the placeholder, or your own frames (step 5) |
+| Figure source | the project's figure, or your own frames (step 5) |
 | Nur Display | on: no toolbar and no frame |
 
 Without a box, automations can address the screen directly with the event `muse_web`
@@ -65,18 +65,18 @@ listens to Home Assistant's `call_service` events.
 
 ## 5. Your own figure (optional)
 
-The app draws the project's placeholder figure. To show your own animations, put six animated PNGs
+The app shows the project's own figure (`web/figure-default/`). To show your own animations, put six animated PNGs
 into `web/local/`: `muse_idle.png`, `muse_wave.png`, `muse_working.png`, `muse_making.png`,
 `muse_confetti.png` (160 x 160) and `muse_avatar.png` (72 x 72), the same set the firmware uses
 (`tools/make_muse_assets.py` cuts them from the Muse app if you have it). Then set the figure
 source to *Eigene Bilder aus einem Ordner* with `http://localhost:8321/local`. git and Vercel
 ignore `web/local/`: an assistant's figure is usually someone else's artwork and stays on your
-Mac. `?figure=placeholder` in the address shows the placeholder for one visit, for screenshots you
+Mac. `?figure=placeholder` in the address shows the project's figure for one visit, for screenshots you
 want to publish.
 
 ## 6. Your own icon (optional)
 
-<img src="screens/mac-app-icon.png" width="128" align="right" alt="The placeholder figure on a black macOS icon">
+<img src="screens/mac-app-icon.png" width="128" align="right" alt="The project's figure on a black macOS icon">
 
 ```bash
 uv run --python 3.14 --with pillow --with numpy --with pyobjc-framework-Cocoa web/tools/set_mac_app_icon.py
@@ -84,7 +84,7 @@ uv run --python 3.14 --with pillow --with numpy --with pyobjc-framework-Cocoa we
 
 It cuts a figure out of its plain background, sets it on a black macOS icon shape and puts it on
 the installed app (`~/Applications/Chrome Apps.localized/Muse Web Screen.app`; `--app` for another
-name). The default is the placeholder figure; `--image my_figure.png` takes yours, and `--fade 0.5`
+name). The default is the project's figure (`web/icons/icon-512.png`); `--image my_figure.png` takes yours, and `--fade 0.5`
 lets a figure that the picture cuts off at the bottom run softly into the black. The PNG goes to
 `web/local/`, never into git. Quit the app and open it again to see the new icon in the Dock;
 after a Chrome update that resets the icon, run the command once more.

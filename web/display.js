@@ -15,7 +15,7 @@ import * as S from "./scene.js";
 import { drawTopBar, drawCard } from "./cards.js";
 import { SceneDrawer } from "./draw.js";
 
-export const VERSION = "1.2.0";
+export const VERSION = "1.3.0";
 
 export class Display {
   constructor(opts) {

@@ -1,19 +1,23 @@
-// figure.js: the placeholder figure, drawn on the canvas.
+// figure.js: the figure's pace, and the figure drawn in code as the last resort.
 //
 // On the box the figure is a set of pictures: idle, wave, working and making with 16
 // frames each, played forwards and back; confetti with 18 frames played once; a 72 px
 // avatar. In a scene the box takes the frame from the scene's time, one step per 160 ms
 // (muse.h, t / 160). On the ready screen and the celebration it steps once at least
 // 160 ms have passed, checked on its 100 ms display ticks, which is one step every
-// second tick: 200 ms (CARD_STEP_MS). This draws the same character tools/
-// make_placeholder_figure.py paints into those files (a round blue body with a darker
-// lower half, white eyes, pink cheeks, a smile; a waving arm, thought dots, an
-// orbiting spark, falling confetti), with its geometry and colours, including the fade
-// of every frame's edges into the page colour. Meta's own Muse artwork is not part of
-// this project; this is the twin of the placeholder, not of the app's character.
-// The owner's own frames come in through figure_frames.js, at run time, never bundled.
+// second tick: 200 ms (CARD_STEP_MS). The step functions here serve every source.
 //
-// Smooth: above the box's 10 frames a second the placeholder is drawn between its
+// The figure itself comes from pictures (figure_frames.js): the project's own frames in
+// figure-default/, the same files the box embeds (tools/make_figure.py), or the owner's
+// own frames at run time. Figure below draws only while those pictures load or when they
+// fail: the flat round character the project shipped before its generated figure (a
+// blue body with a darker lower half, white eyes, pink cheeks, a smile; a waving arm,
+// thought dots, an orbiting spark, falling confetti), with its geometry and colours,
+// including the fade of every frame's edges into the page colour. tools/render_scene.py
+// keeps the same stand-in (draw_coded_figure). Meta's own Muse artwork is not part of
+// this project.
+//
+// Smooth: above the box's 10 frames a second the drawn figure is drawn between its
 // frames (`smooth`), with the same timing, so it moves like the box's, only without the
 // steps. At 10 frames a second it shows the box's frames exactly.
 import { PAGE, INK, css } from "./render.js";
@@ -82,7 +86,7 @@ export class Figure {
 }
 
 // One frame of idle, wave, working, making or the avatar, on a canvas whose origin is
-// the frame's top left corner (the port of draw_figure in tools/render_scene.py);
+// the frame's top left corner (the port of draw_coded_figure in tools/render_scene.py);
 // `smooth` draws the position between two frames.
 export function drawFrame(c, sub, t, size, stepMs = STEP_MS, smooth = false) {
   const step = smooth ? pingPongPos(t, stepMs) : pingPongStep(t, stepMs);
@@ -114,7 +118,7 @@ export function drawFrame(c, sub, t, size, stepMs = STEP_MS, smooth = false) {
   }
 }
 
-// Frame i of the confetti animation (the port of frame_confetti): the body bounces,
+// Frame i of the drawn confetti animation: the body bounces,
 // confetti falls from the top at fixed positions; a fractional i lies between two.
 export function drawConfettiFrame(c, i, size) {
   const n = CONFETTI_FRAMES;

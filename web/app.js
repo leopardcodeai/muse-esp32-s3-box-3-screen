@@ -252,6 +252,14 @@ function connect() {
 // ---------------------------------------------------------------- figure --
 
 const figureStatus = $("figure-status");
+// The project's figure (figure-default/) loads once at the start; until it is there the
+// figure drawn in code stands in.
+async function loadDefaultFigure() {
+  const r = await figure.loadDefault();
+  if (r.failed.length) log(`project figure: ${r.loaded} of ${FIGURE_NAMES.length} loaded, missing ${r.failed.join(", ")}`);
+  if (settings.figureSource !== "url") figureStatus.textContent = "";
+}
+
 async function useFigure() {
   // ?figure=placeholder shows the project's own figure for this visit only, whatever the
   // setting says: screenshots for the public repository never carry Meta's artwork.
@@ -262,7 +270,7 @@ async function useFigure() {
   if (r.stale) return;
   if (url) {
     log(`figure from ${url}: ${r.loaded} of ${FIGURE_NAMES.length} loaded${r.failed.length ? ", missing " + r.failed.join(", ") : ""}`);
-    if (r.loaded === 0) say("Die eigenen Bilder der Figur kamen nicht an: die Anzeige zeigt den Platzhalter (Konsole und Einstellungen sagen mehr).");
+    if (r.loaded === 0) say("Die eigenen Bilder der Figur kamen nicht an: die Anzeige zeigt die Figur des Projekts (Konsole und Einstellungen sagen mehr).");
   }
   figureStatus.textContent = url ? figure.describe() + (r.failed.length && r.loaded ? `, fehlt: ${r.failed.join(", ")}` : "") : "";
 }
@@ -453,6 +461,7 @@ async function start() {
   window.addEventListener("resize", fit);
   watchPixelRatio();
   startLoop();
+  loadDefaultFigure();
   useFigure();
   if (demoMode) {
     $("btn-demo").textContent = "Demo aus";

@@ -4,15 +4,15 @@
 What: scans every tracked or untracked text file of the project for patterns of personal
   data (private IP ranges, Tailscale names, tokens, e-mail addresses, the owner's house
   names) and for files that must never leave the house (firmware/secrets.yaml, Meta's
-  Muse artwork in firmware/figure/, which is recognised by its checksums not matching
-  the placeholder figure). Exit code 1 means: do not push.
+  Muse artwork in firmware/figure/ or web/figure-default/, which is recognised by its
+  checksums not matching the project's own figure). Exit code 1 means: do not push.
 Why: the firmware grew up in a real house; names, addresses and tokens crept into
   comments and examples more than once. A check that runs before every push is cheaper
   than a leaked token.
 Pitfalls:
-  * The placeholder checksums are stored in tools/figure_checksums.txt by
-    `--record-figure` after running make_placeholder_figure.py; run that again whenever
-    the placeholder changes on purpose.
+  * The checksums of the project's figure are stored in tools/figure_checksums.txt by
+    `--record-figure` after running tools/make_figure.py; run that again whenever the
+    figure changes on purpose.
   * Allowed by design: 192.168.0.X and 192.168.0.N (the documentation network of the
     examples), example.ts.net, localhost, the author's byline.
 Usage:
@@ -51,7 +51,7 @@ def tracked_files():
 
 
 def figure_checksums():
-    """The placeholder frames that git would commit; ignored muse_*.png (Meta's artwork) are not looked at."""
+    """The project's figure frames that git would commit; ignored muse_*.png (Meta's artwork) are not looked at."""
     out = {}
     tracked = set(tracked_files())
     for p in sorted((ROOT / "firmware" / "figure").glob("*.png")):
@@ -73,9 +73,14 @@ def main():
         known = dict(line.split()[::-1] for line in CHECKSUMS.read_text().splitlines() if line.strip())
         for name, digest in figure_checksums().items():
             if known.get(name) != digest:
-                findings.append(f"firmware/figure/{name}: not the placeholder figure (Meta's artwork? never publish it)")
+                findings.append(f"firmware/figure/{name}: not the project's figure (Meta's artwork? never publish it)")
+        # The web app's copy of the figure is deployed: it must be the same six files.
+        tracked = set(tracked_files())
+        for path in sorted((ROOT / "web" / "figure-default").glob("*")):
+            if path in tracked and known.get(path.name) != hashlib.sha256(path.read_bytes()).hexdigest():
+                findings.append(f"web/figure-default/{path.name}: not the project's figure (copy firmware/figure/)")
     else:
-        findings.append("tools/figure_checksums.txt missing: run --record-figure after make_placeholder_figure.py")
+        findings.append("tools/figure_checksums.txt missing: run --record-figure after tools/make_figure.py")
     for path in tracked_files():
         if path.suffix.lower() not in TEXT_SUFFIXES or not path.exists():
             continue

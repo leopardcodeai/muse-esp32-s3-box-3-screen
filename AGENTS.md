@@ -18,7 +18,8 @@ then `docs/ACTIONS.md` (what the box can show) and `docs/SCENES.md` (the drawing
   font` means a glyph is missing from a font table.
 - Generated files are generated: `firmware/muse_icons.h` and `muse_icon_glyphs.yaml` by
   `tools/make_icon_table.py`, `firmware/sounds/` by `tools/make_sounds.py`,
-  `firmware/figure/` by `tools/make_placeholder_figure.py`. Edit the generator.
+  `firmware/figure/` by `tools/make_figure.py` (from the poses in `tools/figure_source/`,
+  which `tools/make_figure_source.py` generated once; keep them). Edit the generator.
 - Host tests before a flash: `tools/tests/` (C++ parser tests, commands in their headers)
   and `tools/test_render_scene.py`; the web app's `node --test web/test`.
 - House-specific things (names, a fixed IP, Meta's figure, optional packages) go into an

@@ -101,7 +101,7 @@ Flash it, wait until the box is back, flash your normal overlay, delete the boot
 |---|---|
 | device name, entity names, a fixed IP | every action, card, scene command, sensor |
 | `secrets.yaml` | `secrets.yaml.example` |
-| Meta's figure (`figure/muse_*.png`, ignored) | the placeholder figure |
+| Meta's figure (`figure/muse_*.png`, ignored) | the project's own figure |
 | which optional packages you take | the packages themselves |
 | house-specific URLs | the defaults |
 

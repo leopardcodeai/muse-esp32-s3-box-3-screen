@@ -59,7 +59,7 @@ The whole thing is one ESPHome configuration, five C++ headers and a handful of 
   <img src="docs/previews/night.gif" width="320" alt="A good-night scene: gradient, a pulsing moon, sparkles">
 </p>
 
-Every picture below was rendered from the scene files in [`scenes/`](scenes/) by [`tools/render_scene.py`](tools/render_scene.py), a host port of the box's parser and renderer, with the placeholder figure that ships in this repository. The same files sent to a box give the same picture, pixel by pixel within the limits the tool documents (anti-aliasing and RGB565 aside). A changed scene changes its preview, so these cannot drift from the firmware.
+Every picture below was rendered from the scene files in [`scenes/`](scenes/) by [`tools/render_scene.py`](tools/render_scene.py), a host port of the box's parser and renderer, with the figure frames that ship in this repository (the same files the box embeds). The same files sent to a box give the same picture, pixel by pixel within the limits the tool documents (anti-aliasing and RGB565 aside). A changed scene changes its preview, so these cannot drift from the firmware.
 
 | | | |
 |---|---|---|
@@ -77,7 +77,7 @@ Every picture below was rendered from the scene files in [`scenes/`](scenes/) by
 <p align="center"><img src="docs/screens/mac-desktop.jpg" width="900" alt="A Mac desktop: Muse Web Screen as an app window with a birthday scene beside the repository on GitHub"></p>
 <p align="center">How to set it up as an app with your own figure and icon, borderless and on top: <a href="docs/MAC_APP.md">docs/MAC_APP.md</a>.</p>
 <p align="center"><img src="docs/screens/mac-windows.jpg" width="900" alt="Three Muse Web Screen windows: a menu scene with four buttons, a birthday scene, a reminder card"></p>
-<p align="center"><sub>Screenshots of 8 October 2026, taken shortly before the repository was renamed; tab titles and bookmarks blurred. The figure is the project's placeholder: Meta's Muse artwork is not part of this repository, on your own Mac you can show your own frames (web/README.md).</sub></p>
+<p align="center"><sub>Screenshots of 8 October 2026, taken shortly before the repository was renamed; tab titles and bookmarks blurred. They still show the flat figure the project drew in code before its generated one. Meta's Muse artwork is not part of this repository; on your own Mac you can show your own frames (web/README.md).</sub></p>
 
 What the renderer cannot show is the box itself: a real one shows Meta's Muse figure if you own the Muse app (see [Make it yours](#make-it-yours)), the photos and live views of your own cameras, and the voice. Photos of the box in a real house are welcome as pull requests to `docs/photos/`.
 
@@ -180,13 +180,15 @@ The agent runs `esphome run`, watches the log, and reports. It never needs your 
 | `doorbell_image` | `/local/doorbell_latest.jpg` | the still picture under Home Assistant's `www` folder that `muse_show_image` shows when its `url` is empty |
 | `map_tiles` | `https://tile.openstreetmap.org/{z}/{x}/{y}.png` | the tile server for route maps: any `{z}/{x}/{y}` server with 256 px PNG tiles, your own included |
 | `temperature_offset` | `-8.34` | corrects the dock's AHT20, which sits beside the warm board; `0` shows the raw value |
-| `figure_prefix` | `""` | `""` draws the placeholder figure; `muse_` draws Meta's Muse animations after you ran `tools/make_muse_assets.py` on a machine with the Muse app |
+| `figure_prefix` | `""` | `""` draws the project's own figure; `muse_` draws Meta's Muse animations after you ran `tools/make_muse_assets.py` on a machine with the Muse app |
 
 **Secrets** stay in `firmware/secrets.yaml`, which git ignores: Wi-Fi, the hotspot password, the API key that also encrypts OTA uploads. There is no token anywhere in the repository and the tools take theirs from the environment (`HA_TOKEN`). `tools/check_private.py` scans the tree for private addresses, tokens, e-mail addresses and the house's names before every commit, and refuses a changed figure.
 
 **Your own overlay.** The cleanest way to keep a house-specific setup is one small YAML that includes `muse-esp32boxs3-screen.yaml` as a package and overrides what differs: your names for the entities (`!extend` by id, every entity has one), a fixed IP, Meta's figure, the optional TV remote. The firmware stays untouched and `git pull` brings new features. How, with a complete example: [docs/HOME_OVERLAY.md](docs/HOME_OVERLAY.md).
 
-**Meta's figure.** The animations of the Muse app are Meta's artwork and are not in this repository; the placeholder (a round blue character, 16 frames per animation, drawn by `tools/make_placeholder_figure.py`) is. If you have the Muse app installed, `tools/make_muse_assets.py` cuts the app's own videos into `firmware/figure/muse_*.png`, which `.gitignore` keeps out of git; set `figure_prefix: "muse_"` and rebuild. The app's typeface (Optimistic) is not used, because its licence forbids altering it.
+**The project's figure.** The box ships its own character: a glossy, soft 3D, round blue creature with big dark eyes, a tuft on top and tiny hands, the one on the hero picture. An image model (OpenAI's `gpt-image-2.5-flare`, 8 October 2026) drew it once from that picture and then in five poses (neutral, blink, wave, thinking, celebrating), each an edit of the first so the character stays the same; the PNGs and their prompts are in [`tools/figure_source/`](tools/figure_source/) (`tools/make_figure_source.py` asks again, on purpose only). `tools/make_figure.py` turns the poses into the box's animations: a bob and a blink for idle, a sway for wave, an orbiting spark for working, sparkles for making, confetti for the celebration, 16 or 18 frames each, dithered to RGB565.
+
+**Meta's figure.** The animations of the Muse app are Meta's artwork and are not in this repository. If you have the Muse app installed, `tools/make_muse_assets.py` cuts the app's own videos into `firmware/figure/muse_*.png`, which `.gitignore` keeps out of git; set `figure_prefix: "muse_"` and rebuild. The app's typeface (Optimistic) is not used, because its licence forbids altering it.
 
 **Language.** The screen speaks German by default (status words, "Zeit ist um", the weekday); [docs/LOCALIZATION.md](docs/LOCALIZATION.md) lists the strings. The actions take whatever language the assistant sends.
 
@@ -345,7 +347,7 @@ Two findings behind those numbers that cost real time: with mbedTLS in internal 
 | a picture card turns into "Bild: HTTP 404" or "Bild: connection failed (...; DNS, TLS or no route)" | the URL is wrong, the host needs TLS 1.3 or the box has no DNS | check the URL in a browser first; with a fixed IP set `dns1` under `manual_ip`; TLS 1.3 is on |
 | a route says "map failed: tile is not a PNG" | the tile server sends JPEG or WebP | use a server with PNG tiles, or raster tiles of your own |
 | "Route: place not found: ..." | Nominatim did not know the name | send coordinates (`50.94,6.96`), or a more complete name with the town |
-| the figure is a blue blob | that is the placeholder, on purpose | see Meta's figure under [Make it yours](#make-it-yours) |
+| the figure is a round blue character, not Muse | that is the project's own figure, on purpose | see Meta's figure under [Make it yours](#make-it-yours) |
 | Home Assistant shows "Re-authentication required" after a flash | you added or changed the API key | enter the key from `secrets.yaml` once |
 | Spotify through Music Assistant waits 30 s and plays nothing | Music Assistant throttles its Spotify Web API calls on a shared allowance | wait a minute; radio and local files play at once |
 | the first flash over USB succeeds, the box never joins Wi-Fi | the SSID or password in `secrets.yaml` is wrong, or the network is 5 GHz only | the ESP32-S3 has 2.4 GHz only; the fallback hotspot `muse-esp32boxs3-screen` appears after 90 s |
@@ -358,13 +360,13 @@ Two findings behind those numbers that cost real time: with mbedTLS in internal 
 
 **Why ESPHome and not Meta's gadget SDK on this board?** The SDK pairs the box to the Muse app as a gadget and leaves the dock, the battery, the IR and the wake word out [8]; the Muse app itself rolled out in the US first [9]. ESPHome gives the box to Home Assistant, which exists in every country and already knows the house. The two are not exclusive; this one has no Meta account in the loop.
 
-**Can it show my own figure?** Yes: six animated PNGs of 160 x 160 and a 72 x 72 avatar, the names in `firmware/figure/`. `tools/make_placeholder_figure.py` is the template; `tools/make_muse_assets.py` shows how the frames are dithered to RGB565 so gradients do not band.
+**Can it show my own figure?** Yes: six animated PNGs of 160 x 160 and a 72 x 72 avatar, the names in `firmware/figure/`. `tools/make_figure.py` is the template: it animates five still poses of a character (any PNGs with a transparent background in `tools/figure_source/`) and dithers the frames to RGB565 so gradients do not band.
 
 **Why German on the screen?** Because the house is. [docs/LOCALIZATION.md](docs/LOCALIZATION.md) lists every string; the actions carry whatever language the assistant writes.
 
 **Does it run on the ESP32-S3-BOX or BOX-Lite?** Not as is. The BOX-3's codecs, touch controller and dock pins are in the YAML; a port needs the other board's BSP and a day of testing. Pull requests welcome.
 
-**Why is Flash at 95 %?** Six animations of 16 to 18 frames at 160 x 160 in RGB565 are 2.8 MB, the icon font in two sizes and the 273 icons another chunk, the TLS bundle, Bluetooth proxy, voice assistant and the three decoders the rest. The 16 MB flash holds two 8 MB OTA slots; trimming animations frees space fastest.
+**Why is Flash at 95 %?** Five animations of 16 to 18 frames at 160 x 160 and the avatar, in RGB565, are 4.2 MB, the icon font in two sizes and the 273 icons another chunk, the TLS bundle, Bluetooth proxy, voice assistant and the three decoders the rest. The 16 MB flash holds two 8 MB OTA slots; trimming animations frees space fastest.
 
 ## Repository layout
 
@@ -378,7 +380,7 @@ muse-esp32boxs3-screen/
     muse_fit.h               text fitting and wrapping
     muse_icons.h             273 icons, generated from muse_icon_glyphs.yaml
     muse_gif/                AnimatedGIF 2.2.3, Apache 2.0, with an ESP-IDF shim
-    figure/                  the placeholder figure (Meta's frames go here as muse_*.png, ignored)
+    figure/                  the project's figure, built by tools/make_figure.py (Meta's frames go here as muse_*.png, ignored)
     icons/                   Meteocons weather icons as PNG, MIT
     sounds/                  the chime and the question sound, generated
     wakewords/               the hey_jarvis model shown as "Muse"
@@ -393,7 +395,8 @@ muse-esp32boxs3-screen/
     muse_screen.py              a command line for every action over the REST API
     render_scene.py          renders a scene to PNG or GIF exactly as the box would
     check_private.py         refuses private data before a commit
-    make_icon_table.py, make_sounds.py, make_weather_icons.py, make_placeholder_figure.py, make_muse_assets.py, make_hero_image.py
+    make_figure.py           the figure's animations from the poses in figure_source/ (make_figure_source.py made those)
+    make_icon_table.py, make_sounds.py, make_weather_icons.py, make_muse_assets.py, make_hero_image.py
     tests/                   host tests of the parser and the text fitting (ASan, UBSan)
   CLAUDE.md, AGENTS.md       the rules and the flash flow for coding agents
   CHANGELOG.md, LICENSE, NOTICE
@@ -402,11 +405,12 @@ muse-esp32boxs3-screen/
 ## Development
 
 - **Versions**: the newest stable ESPHome and the ESP-IDF it ships (`esp32: framework: type: esp-idf`), checked before every build, never changed in the middle of one. `min_version: 2026.9.0` is enforced in the YAML.
-- **Web app tests**: `node --test web/test` (60 tests, no dependencies); the demo is `cd web && python3 -m http.server 8321`, then `http://localhost:8321/index.html?demo=1`.
-- **Host tests**: `tools/tests/` compile with `clang++ -fsanitize=address,undefined` and run in a second; `tools/test_render_scene.py` runs with `uv run --python 3.14 --with pillow --with fonttools --with pytest -m pytest tools/ -q` (9 tests).
+- **Web app tests**: `node --test web/test` (85 tests, no dependencies); the demo is `cd web && python3 -m http.server 8321`, then `http://localhost:8321/index.html?demo=1`.
+- **Host tests**: `tools/tests/` compile with `clang++ -fsanitize=address,undefined` and run in a second; `tools/test_render_scene.py` runs with `uv run --python 3.14 --with pillow --with fonttools --with pytest -m pytest tools/ -q` (13 tests).
 - **Previews**: `uv run --python 3.14 --with pillow --with fonttools tools/render_scene.py --all scenes docs/previews --clock "2026-10-07 21:30"` rebuilds every PNG and GIF in 6 s; a fixed clock keeps the files byte-identical between runs.
 - **Before a commit**: `python3 tools/check_private.py`, then `esphome config firmware/muse-esp32boxs3-screen.yaml`.
 - **The hero picture**: `tools/make_hero_image.py --provider openai` asks an image model for a new one and writes the prompt beside it; the chosen file is committed with its `.txt`, and it is not regenerated on a whim, because every run differs.
+- **The figure**: `uv run --python 3.14 --with pillow --with numpy tools/make_figure.py` rebuilds the six files in `firmware/figure/` from the committed poses; then `python3 tools/check_private.py --record-figure`, copy the six files to `web/figure-default/`, rebuild the previews and the app icons (`web/tools/make_app_icons.py`). The poses themselves come from `tools/make_figure_source.py` (OpenAI, key from the environment) and are kept, not regenerated.
 - **Icons**: `tools/make_icon_table.py` regenerates `muse_icons.h` from `muse_icon_glyphs.yaml` and the Material Design Icons font; a codepoint is never guessed, it is looked up.
 - **Adding an action**: copy the shortest one in `muse-esp32boxs3-screen.yaml` (`muse_show_value`), give it a mode in the display lambda, a line in `docs/ACTIONS.md` and in the prompt, and a scene or card in `scenes/` when it draws something new. Home Assistant makes every field mandatory, so document the empty value.
 

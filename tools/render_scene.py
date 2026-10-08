@@ -16,9 +16,12 @@ Pitfalls:
     TTFs are not in the repo: `esphome compile firmware/muse-esp32boxs3-screen.yaml` downloads them into
     firmware/.esphome/font/, where this tool looks first (override with MUSE_FONT_DIR and
     MUSE_ICON_FONT, or --font-dir and --icon-font).
-  * Muse's figure (``muse``, ``avatar``) is Meta's private artwork. This tool draws a
-    neutral placeholder character in its place (draw_figure); everything else follows
-    the box.
+  * The figure (``muse``, ``avatar``) is drawn from the frames the box embeds by default,
+    firmware/figure/idle.png, wave.png, working.png, making.png and avatar.png (the
+    project's own character, tools/make_figure.py), decoded with Pillow and stepped like
+    the box: one frame per 160 ms, forwards and back. Meta's Muse frames
+    (firmware/figure/muse_*.png, figure_prefix "muse_") are never read. Without the files
+    a stand-in drawn in code takes their place (draw_coded_figure).
   * Shapes are drawn 3x oversampled and reduced, which gives them the soft edges of the
     box. Text and icons are drawn 1:1 with the same Pillow rasteriser the ESPHome font
     generator uses, so glyphs land where they land on the device.
@@ -65,6 +68,8 @@ TEXT_WEIGHT = [500, 500, 700, 600, 700, 700]  # the Inter weights behind them (s
 ICON_PX = [24, 46]  # s l
 
 HERE = Path(__file__).resolve().parent
+FIGURE_DIR = HERE.parent / "firmware" / "figure"  # the project's figure; never the muse_*.png beside it
+STEP_MS = 160  # a step of the figure in a scene (muse.h: t / 160)
 ESPHOME_FONTS = HERE.parent / "firmware" / ".esphome" / "font"  # where esphome compile caches the fonts
 FONT_HINT = ("run `esphome compile firmware/muse-esp32boxs3-screen.yaml` once (it downloads Inter and the icon font into "
              "firmware/.esphome/font/), or point MUSE_FONT_DIR and MUSE_ICON_FONT (or --font-dir and "
@@ -1185,15 +1190,72 @@ def draw_text(d, item, x, y, t, clock, fonts, c):
         d.text((round(xs), round(top + i * lh)), line, font=font, fill=c, anchor="la")
 
 
+_FIGURE_CACHE: dict = {}
+
+
+def figure_frames(sub, folder=None):
+    """The frames of firmware/figure/<sub>.png as RGB pictures, or None when the file is missing or broken.
+    Pillow composes every APNG frame from the changed rectangle the file stores, as ESPHome does when it
+    embeds the file."""
+    path = Path(folder or FIGURE_DIR) / f"{sub}.png"
+    key = str(path)
+    if key not in _FIGURE_CACHE:
+        frames = None
+        try:
+            with Image.open(path) as im:
+                frames = []
+                for i in range(getattr(im, "n_frames", 1)):
+                    im.seek(i)
+                    frames.append(im.convert("RGB"))
+        except (OSError, ValueError):
+            frames = None
+        _FIGURE_CACHE[key] = frames or None
+    return _FIGURE_CACHE[key]
+
+
+def lround(v):
+    """C's lroundf: halves away from zero (Python's round() goes to the even neighbour)."""
+    return int(math.copysign(math.floor(abs(v) + 0.5), v))
+
+
+def figure_index(sub, t, count):
+    """Which of `count` frames the box shows t ms into a scene: the avatar is a still, confetti plays once and
+    holds its last frame, the rest go 0 .. count - 1 and back, one step per 160 ms (muse.h, FIGURE)."""
+    if count <= 1 or sub == "avatar":
+        return 0
+    if sub == "confetti":
+        return min(count - 1, t // STEP_MS)
+    cycle = 2 * (count - 1)
+    step = (t // STEP_MS) % cycle
+    return step if step < count else cycle - step
+
+
+def draw_figure(layer, x, y, r, sub, t, folder=None):
+    """The figure as the box draws it in a scene: the picture of the animation (160 x 160) or the avatar
+    (72 x 72) centred on x, y, cut to a disc of radius r; outside the disc the box shows what lies below.
+    The pictures are the files the firmware embeds (figure_frames); the coded stand-in only when they are
+    missing."""
+    frames = figure_frames(sub, folder)
+    if not frames:
+        draw_coded_figure(layer, x, y, r, sub, t)
+        return
+    frame = frames[figure_index(sub, t, len(frames))]
+    w, h = frame.size
+    pic = frame.resize((s(w), s(h)), Image.NEAREST).convert("RGBA")  # NEAREST, so reduce(SS) gives the pixels back
+    rr = min(r, min(w, h) / 2)
+    mask = Image.new("L", pic.size, 0)
+    ImageDraw.Draw(mask).ellipse(disc_box(w / 2, h / 2, rr), fill=255)
+    pic.putalpha(mask)
+    composite_at(layer, pic, s(lround(x - w / 2)), s(lround(y - h / 2)))
+
+
 FIGURE_BODY, FIGURE_DARK, FIGURE_CHEEK, FIGURE_SPARK = (76, 150, 214), (54, 112, 168), (255, 158, 158), (255, 204, 0)
 
 
-def draw_figure(layer, x, y, r, sub, t):
-    """PLACEHOLDER for Muse's figure. On the box this is Meta's artwork: a 160 x 160 picture per animation
-    (idle, wave, working, making) and a 72 x 72 portrait (avatar) on the page colour, cut to a disc of
-    radius r. That artwork is private and not part of this tool, so the project's own placeholder stands
-    in, the character tools/make_placeholder_figure.py builds for a box without the artwork: same place,
-    same sizes, same round frame, and the box's 16 frames played forwards and back at 160 ms a step."""
+def draw_coded_figure(layer, x, y, r, sub, t):
+    """The stand-in when firmware/figure/ has no pictures: the flat round character the project shipped before
+    its generated figure (a blue disc with a face), same place, same sizes, same round frame, and 16 frames
+    played forwards and back at 160 ms a step."""
     size = 72 if sub == "avatar" else 160
     pic = Image.new("RGBA", (s(size), s(size)), PAGE + (255,))
     d = ImageDraw.Draw(pic)

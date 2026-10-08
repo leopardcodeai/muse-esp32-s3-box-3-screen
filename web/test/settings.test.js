@@ -14,7 +14,7 @@ function memory(initial = {}) {
   return { getItem: (k) => (k in data ? data[k] : null), setItem: (k, v) => { data[k] = String(v); }, data };
 }
 
-test("defaults: the box's device name, 60 frames a second, the placeholder figure", () => {
+test("defaults: the box's device name, 60 frames a second, the project's figure", () => {
   assert.equal(DEFAULTS.device, DEFAULT_DEVICE);
   assert.equal(DEFAULTS.fps, 60);
   assert.equal(DEFAULTS.figureSource, "placeholder");

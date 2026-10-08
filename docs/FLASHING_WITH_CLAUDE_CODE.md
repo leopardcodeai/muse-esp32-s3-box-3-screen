@@ -25,7 +25,7 @@ so you can check what it does.
    agent copies `firmware/secrets.yaml.example`, asks for the Wi-Fi name and password
    (type them into the terminal prompt, not into the chat), and generates the API key
    with `openssl rand -base64 32`. `secrets.yaml` is ignored by git.
-3. **Figure.** The repo ships a placeholder character. With the Muse app installed on the
+3. **Figure.** The repo ships its own character (`firmware/figure/`). With the Muse app installed on the
    Mac, *"build the Muse figure"* runs `tools/make_muse_assets.py`, which cuts Muse's own
    animations out of the app into `firmware/figure/`. Those files stay on your machine;
    `tools/check_private.py` refuses to let them be pushed.
@@ -57,7 +57,7 @@ so you can check what it does.
   passes before a push.
 - That a missing glyph (`Codepoint ... not found in font`) is fixed in the generator,
   not by hand in the header.
-- That the figure files in the repo are the placeholder (checksums in
+- That the figure files in the repo are the project's own (checksums in
   `tools/figure_checksums.txt`).
 
 ## When something fails

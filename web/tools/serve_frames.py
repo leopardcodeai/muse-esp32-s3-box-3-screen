@@ -17,14 +17,14 @@ Pitfalls:
   * From the hosted HTTPS page, Chrome and Edge ask once whether the page may reach apps
     on this device (Local Network Access); allow it, or nothing loads. http://127.0.0.1 is
     not mixed content, browsers count this machine as secure.
-  * --placeholder serves the repository's placeholder frames (idle.png and so on) under
-    the muse_ names, to try the figure source without Meta's artwork.
+  * --placeholder serves the project's own figure frames (idle.png and so on) under the
+    muse_ names, to try the figure source without Meta's artwork.
   * Read only: it writes nothing, so it has no --dry-run.
 
 Usage:
   python3 web/tools/serve_frames.py                      # firmware/figure on port 8322
   python3 web/tools/serve_frames.py --dir some/folder --port 8323
-  python3 web/tools/serve_frames.py --placeholder        # the placeholder, for a test
+  python3 web/tools/serve_frames.py --placeholder        # the project's figure, for a test
 """
 import argparse
 import http.server
@@ -83,7 +83,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--dir", type=Path, default=DEFAULT_DIR, help="folder with muse_<name>.png (default: firmware/figure)")
     ap.add_argument("--port", type=int, default=8322, help="port on 127.0.0.1 (default 8322)")
-    ap.add_argument("--placeholder", action="store_true", help="serve the placeholder frames <name>.png as muse_<name>.png")
+    ap.add_argument("--placeholder", action="store_true", help="serve the project's figure frames <name>.png as muse_<name>.png")
     args = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)  # the lines show at once, also in a log
     folder = args.dir.resolve()

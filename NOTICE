@@ -18,7 +18,14 @@ This project bundles or fetches work of others, each under its own licence:
   default; OpenStreetMap contributors, ODbL) and routes from
   routing.openstreetmap.de (FOSSGIS e.V.), used at run time under their usage policies.
 
+The project's figure (the poses in tools/figure_source/, the animations built from them in
+firmware/figure/ and web/figure-default/, the app icons in web/icons/) was generated with
+OpenAI's image model gpt-image-2.5-flare on 8 October 2026, from the README's hero picture
+(docs/hero/hero.jpg, made with the same model on 7 October 2026). The model, the date and the
+full prompt of every picture are recorded beside it (tools/figure_source/*.txt,
+docs/hero/hero.openai.txt).
+
 "Muse" is Meta's assistant and trademark. This project is not affiliated with, endorsed
 by or supported by Meta. The character animations of the Muse app are Meta's artwork:
 they are not part of this repository and must not be redistributed; the repository ships
-a placeholder character instead.
+its own character instead.

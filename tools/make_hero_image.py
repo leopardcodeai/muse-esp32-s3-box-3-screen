@@ -18,7 +18,7 @@ Pitfalls:
   * Image models write text badly. The prompt forbids text and logos; the card on the
     screen shows an icon only.
   * No third-party character is asked for. The figure on the screen is this project's
-    own placeholder: a round blue character with big eyes.
+    own: a round blue character with big eyes (tools/figure_source/ was made from it).
 
 Usage:
   python3 tools/make_hero_image.py --dry-run

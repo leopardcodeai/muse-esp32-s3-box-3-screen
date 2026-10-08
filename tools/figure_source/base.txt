@@ -1,0 +1,9 @@
+provider: openai
+model: gpt-image-2.5-flare
+date: 2026-10-08
+endpoint: https://api.openai.com/v1/images/edits
+parameters: model=gpt-image-2.5-flare, n=1, size=1024x1024, quality=high, background=transparent, output_format=png
+reference: docs/hero/hero.jpg cropped to (516, 400, 660, 590), squared, 1024 x 1024
+size: 1024 x 1024, RGBA, 971113 bytes
+prompt:
+The friendly character on the little screen in this picture, alone, as a clean character render: a glossy, soft 3D, round blue cartoon creature: head and body are one smooth ball in the same blue as the reference, big dark eyes with white highlights, a small smile, a little tuft on top, faintly rosy cheeks, two tiny rounded stubby hands at its sides, no legs, no outline, soft studio light from the upper left with gentle glossy highlights. Front view, facing the viewer, centred, the whole body visible with a margin all around, about two thirds of the picture high. Transparent background, no screen, no frame, no shadow on the ground, no other objects, no text, no letters, no logos.

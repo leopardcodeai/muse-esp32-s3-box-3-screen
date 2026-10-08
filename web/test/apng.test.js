@@ -1,4 +1,4 @@
-// apng.test.js: the APNG parser on the repository's placeholder figure (animated PNGs
+// apng.test.js: the APNG parser on the repository's own figure (animated PNGs
 // written by Pillow with changed rectangles only) and on a plain PNG. Every rebuilt
 // frame must be a valid PNG: signature, IHDR with the frame's size, correct CRCs, and
 // image data that inflates to exactly the frame's scanlines.
@@ -40,7 +40,7 @@ test("crc32() of the IEND chunk", () => {
   assert.deepEqual([...chunk("IEND", new Uint8Array(0))], [0, 0, 0, 0, 73, 69, 78, 68, 0xAE, 0x42, 0x60, 0x82]);
 });
 
-test("the placeholder's animations: 16 frames, confetti 18, the first full, the rest rectangles", () => {
+test("the project's animations: 16 frames, confetti 18, the first full, the rest rectangles", () => {
   for (const [name, n] of [["idle", 16], ["wave", 16], ["working", 16], ["making", 16], ["confetti", 18]]) {
     const a = parseApng(figure(name));
     assert.equal(a.width, 160, name);

@@ -73,7 +73,14 @@ Every element also takes:
   `muell`, ...) and German words (`herz`, `kaffee`, `sonne`, `geschenk`, ...): 110 more
   names. The full list is `muse_icons.h`.
 - **Muse's figure** fades into the page colour at its edges. On a dark background it
-  therefore sits in a light round frame.
+  therefore sits in a light round frame. The figure this repository ships is its own
+  character, a glossy round blue creature with big eyes and a tuft (generated once with
+  an image model, `tools/figure_source/`): `idle` bobs, breathes and blinks, `wave`
+  sways with one hand raised, `working` looks up while a spark circles its head,
+  `making` rocks among twinkling sparkles, `avatar` is the same character as a 72 px
+  still. The celebration card (`muse_celebrate`) plays a sixth animation, the
+  character with a party hat and falling confetti, once. With `figure_prefix: "muse_"`
+  Meta's Muse animations take their place on your own box.
 - **Response:** when the caller asks for one (REST `?return_response`, or
   `response_variable` in a script), for example
   `{"ok": false, "elements": 6, "frames": 0, "seconds": 60, "skipped": 1, "errors": ["line 4: ..."]}`.

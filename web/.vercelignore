@@ -9,6 +9,7 @@
 !/vercel.json
 !icons
 !demo
+!figure-default
 
 # Never, wherever it sits: the owner's figure frames and any local frame folder.
 muse_*.png

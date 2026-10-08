@@ -1,0 +1,9 @@
+provider: openai
+model: gpt-image-2.5-flare
+date: 2026-10-08
+endpoint: https://api.openai.com/v1/images/edits
+parameters: model=gpt-image-2.5-flare, n=1, size=1024x1024, quality=high, background=transparent, output_format=png
+reference: tools/figure_source/base.png
+size: 1024 x 1024, RGBA, 950073 bytes
+prompt:
+The same character, in its calm neutral pose: eyes open and looking at the viewer, a small friendly smile, both tiny hands resting at its sides. Keep the character exactly as in the reference picture: the same shape, the same blue, the same eyes, the same tuft, the same tiny hands, the same size and the same place in the picture. Front view, centred, the whole body visible with a margin all around. Transparent background, no shadow on the ground, no other objects, no text, no letters, no logos.
