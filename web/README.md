@@ -30,6 +30,8 @@ The four buttons under the display: **Float** (always on top), **Kiosk** (full s
 
 ## Your own screen on your Mac (local, with your own figure)
 
+Step by step, with the icon and the reasons for Chrome over Safari: [../docs/MAC_APP.md](../docs/MAC_APP.md).
+
 `web/tools/serve_local.sh --install` serves this folder at http://localhost:8321 from a LaunchAgent (127.0.0.1 only, started at login). From there the page may open `ws://` to Home Assistant on your LAN, which a page from https may not. Put your own figure frames into `web/local/` (git and Vercel ignore that folder; for Meta's Muse frames run `tools/make_muse_assets.py` and copy `firmware/figure/muse_*.png`), and set the figure source to `http://localhost:8321/local`.
 
 **Nur Display** (setting, or `?bare=1`): no toolbar and no frame; the strip beside the display takes the colour of the display's edge, and the toolbar appears while the pointer is near the bottom edge. Keys: F floats the display above every window (Picture in Picture), K full screen, E settings. Installed from Chrome ("Install page as app"), the app draws into its own title bar (Window Controls Overlay) and only the three window buttons remain. In Chrome the floating window stays clickable (Document Picture-in-Picture); Safari can float only a video of the display, which cannot be clicked.
