@@ -45,7 +45,7 @@ Press **E** in the app (or the *Einstellungen* button):
 |---|---|
 | Home Assistant URL | the LAN address, for example `http://homeassistant.local:8123` |
 | Long-lived access token | create one for this screen only: Home Assistant, your profile, *Security*, *Long-lived access tokens*. Paste it yourself; it stays in this browser's storage on this Mac |
-| Device name | `muse_esp32boxs3_screen`, or the name your box has (the part before `_muse_` in its actions) |
+| Device name | `muse_esp32_s3_box_3_screen`, or the name your box has (the part before `_muse_` in its actions) |
 | Figure source | the project's figure, or your own frames (step 5) |
 | Nur Display | on: no toolbar and no frame |
 

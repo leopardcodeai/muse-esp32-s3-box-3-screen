@@ -24,10 +24,10 @@
 //    ws:// from HTTPS in any case (web/README.md, "Connecting from the hosted page").
 //
 // DEFAULT_DEVICE is the one place of the box's device name in this app: the part before
-// "_muse_" in its actions (esphome.muse_esp32boxs3_screen_muse_show_text), the ESPHome
-// name muse-esp32boxs3-screen with "_" for "-". The settings, the dialog's placeholder
+// "_muse_" in its actions (esphome.muse_esp32_s3_box_3_screen_muse_show_text), the ESPHome
+// name muse-esp32-s3-box-3-screen with "_" for "-". The settings, the dialog's placeholder
 // and the tests take it from here.
-export const DEFAULT_DEVICE = "muse_esp32boxs3_screen";
+export const DEFAULT_DEVICE = "muse_esp32_s3_box_3_screen";
 export const EVENT_WEB = "muse_web";
 export const EVENT_ANSWER = "muse_web_answer";
 

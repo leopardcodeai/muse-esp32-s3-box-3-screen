@@ -9,7 +9,7 @@ triggers:
     from: closed
     to: opening
 actions:
-  - action: esphome.muse_esp32boxs3_screen_muse_show_event
+  - action: esphome.muse_esp32_s3_box_3_screen_muse_show_event
     continue_on_error: true
     data:
       icon: garage
@@ -17,7 +17,7 @@ actions:
       message: "Das Tor geht auf, {{ now().strftime('%H:%M') }}"
   - delay:
       seconds: 4
-  - action: esphome.muse_esp32boxs3_screen_muse_show_live
+  - action: esphome.muse_esp32_s3_box_3_screen_muse_show_live
     continue_on_error: true
     data:
       title: "Garage"

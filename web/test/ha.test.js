@@ -14,8 +14,8 @@ test("websocketUrl(): http and https, trailing slashes", () => {
 });
 
 test("the device name is the box's ESPHome name with underscores", () => {
-  assert.equal(DEFAULT_DEVICE, "muse_esp32boxs3_screen");
-  assert.equal(DEFAULT_DEVICE, "muse-esp32boxs3-screen".replaceAll("-", "_"));
+  assert.equal(DEFAULT_DEVICE, "muse_esp32_s3_box_3_screen");
+  assert.equal(DEFAULT_DEVICE, "muse-esp32-s3-box-3-screen".replaceAll("-", "_"));
 });
 
 test("mapCallService(): only esphome calls of <device>_muse_*", () => {

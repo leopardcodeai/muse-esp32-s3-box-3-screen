@@ -57,7 +57,7 @@ SOURCE = Path("/Applications/Muse.app/Contents/Resources")
 SIZE = 160          # canvas, square; the display is 320x240
 INNER = 140         # the video inside the canvas (zoomed out, 06.10.2026)
 AVATAR = 72         # pixels for the small avatar on text and value pages
-BACKGROUND = "0xF3F3F3"  # must match MUSE_BG in muse-esp32boxs3-screen.yaml
+BACKGROUND = "0xF3F3F3"  # must match MUSE_BG in muse-esp32-s3-box-3-screen.yaml
 FADE = 16           # pixels of the vignette that fades into the background
 
 # name: (video, start second, length in seconds, frames per second)

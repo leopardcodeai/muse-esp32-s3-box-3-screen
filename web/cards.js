@@ -1,5 +1,5 @@
 // cards.js: the cards the box shows, drawn as its display lambda draws them
-// (firmware/muse-esp32boxs3-screen.yaml, display:): the top bar, the status with the figure and the
+// (firmware/muse-esp32-s3-box-3-screen.yaml, display:): the top bar, the status with the figure and the
 // pill, text, value, celebration, weather, photo, event, route, agenda, question, timer,
 // info and list. Same positions, fonts and colours; the texts stay German like the box's.
 //

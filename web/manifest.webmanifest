@@ -2,7 +2,7 @@
   "id": "muse-web",
   "name": "Muse Web Screen",
   "short_name": "Muse Screen",
-  "description": "The twin of the Muse ESP32BoxS3 Screen in the browser: an always-on display of the assistant's cards and scenes.",
+  "description": "The twin of the Muse ESP32-S3-BOX-3 Screen in the browser: an always-on display of the assistant's cards and scenes.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

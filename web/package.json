@@ -1,7 +1,7 @@
 {
   "name": "muse-web-screen",
   "version": "1.3.0",
-  "description": "Muse Web Screen: the twin of the Muse ESP32BoxS3 Screen in the browser, an always-on display of the assistant's cards and scenes.",
+  "description": "Muse Web Screen: the twin of the Muse ESP32-S3-BOX-3 Screen in the browser, an always-on display of the assistant's cards and scenes.",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",

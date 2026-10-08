@@ -44,7 +44,7 @@ export function emojiWeather(cp) {
   }
 }
 
-// What the two largest fonts on the box hold (muse-esp32boxs3-screen.yaml, m_head and m_value). The
+// What the two largest fonts on the box hold (muse-esp32-s3-box-3-screen.yaml, m_head and m_value). The
 // four smaller ones hold Google Fonts' Latin Core set, approximated by the Latin blocks.
 export const GLYPHS_XL = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz"
   + "{|}~äöüÄÖÜß€°„“”‘’–—…•·àáâéèêëíìîïóòôúùûçñÀÁÉÈÓÚÇÑ";

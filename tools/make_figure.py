@@ -24,7 +24,7 @@ Pitfalls:
   * Flash: every 160 x 160 frame is 51,200 bytes of RGB565, the 82 frames 4.2 MB. Keep the
     sizes and counts (FRAMES, CONFETTI_FRAMES); the firmware plays whatever count a file
     has, but the app partition is not unlimited.
-  * The page colour (243, 243, 243) must match MUSE_BG in muse-esp32boxs3-screen.yaml and
+  * The page colour (243, 243, 243) must match MUSE_BG in muse-esp32-s3-box-3-screen.yaml and
     PAGE in render_scene.py and the web app; every frame fades into it at the edges.
   * Ping-pong: the box plays 0..15 and back, so every motion here is a function that is
     at rest (an extremum) at frame 0 and frame 15, otherwise the turn shows as a jolt.

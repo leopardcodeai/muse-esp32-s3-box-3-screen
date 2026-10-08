@@ -7,9 +7,9 @@ lambdas, so there is no switch.
 
 | String | Where |
 |---|---|
-| status pills "Bereit", "Ich höre zu …", "Ich denke nach …", "Ich antworte …", "Da ging etwas schief", "Ruhe", "Hallo!", "Mikrofon aus" | `firmware/muse-esp32boxs3-screen.yaml`, display lambda, `PILLS[]` and the mute line |
-| "Bild lädt …", "Route wird berechnet …", "Zeit ist um", "Timer", "+N weitere", "Keine Termine", "N Termine", "N von N erledigt", "Nichts drauf", "Liste", "Heute", "Live" | `firmware/muse-esp32boxs3-screen.yaml`, the cards and the actions |
-| "Ja" / "Nein" default buttons, "Min.", "Std." | `firmware/muse-esp32boxs3-screen.yaml` |
+| status pills "Bereit", "Ich höre zu …", "Ich denke nach …", "Ich antworte …", "Da ging etwas schief", "Ruhe", "Hallo!", "Mikrofon aus" | `firmware/muse-esp32-s3-box-3-screen.yaml`, display lambda, `PILLS[]` and the mute line |
+| "Bild lädt …", "Route wird berechnet …", "Zeit ist um", "Timer", "+N weitere", "Keine Termine", "N Termine", "N von N erledigt", "Nichts drauf", "Liste", "Heute", "Live" | `firmware/muse-esp32-s3-box-3-screen.yaml`, the cards and the actions |
+| "Ja" / "Nein" default buttons, "Min.", "Std." | `firmware/muse-esp32-s3-box-3-screen.yaml` |
 | weather labels ("Sonnig", "Regen", ...) and the German weather words | `firmware/muse.h`, `condition()` |
 | event icon names (`klingel`, `muell`, ...) and their aliases | `firmware/muse.h`, `event()` |
 | "ganztägig" in agendas, the German icon words (`herz`, `kaffee`, ...) | `firmware/muse.h` `parse_agenda`, `tools/make_icon_table.py` ALIASES |
@@ -19,4 +19,4 @@ lambdas, so there is no switch.
 The 36 px headline font carries ASCII, German umlauts and the common accents; the 54 px
 font only letters, digits and `, . : - + % ° / € ! ? ' & ( )`. Other characters are left
 out of a text rather than drawn as boxes. For Cyrillic or Greek, add the glyph sets to
-`m_head` in `muse-esp32boxs3-screen.yaml` (flash permitting).
+`m_head` in `muse-esp32-s3-box-3-screen.yaml` (flash permitting).

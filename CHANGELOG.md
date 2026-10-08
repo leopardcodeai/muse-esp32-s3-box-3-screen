@@ -1,6 +1,12 @@
 # Changelog
 
-The version is `esphome: project: version` in `firmware/muse-esp32boxs3-screen.yaml`; the box reports it in `muse_get_state` and on its info screen. Dates are the day the firmware ran on the box. Wrong turns are recorded, because the same mistake comes back otherwise.
+The version is `esphome: project: version` in `firmware/muse-esp32-s3-box-3-screen.yaml`; the box reports it in `muse_get_state` and on its info screen. Dates are the day the firmware ran on the box. Wrong turns are recorded, because the same mistake comes back otherwise.
+
+## 4.3.0, 8 October 2026
+
+- The project is called Muse ESP32-S3-BOX-3 Screen, after the board's own name; "ESP32BoxS3" is gone. The repository moved to github.com/leopardcodeai/muse-esp32-s3-box-3-screen (both earlier addresses redirect), the firmware file is `firmware/muse-esp32-s3-box-3-screen.yaml`, and the default device name is `muse-esp32-s3-box-3-screen`, so a box flashed from scratch has the actions `esphome.muse_esp32_s3_box_3_screen_muse_*`.
+- A box already running under `muse-esp32boxs3-screen` keeps its name, its actions and everything that calls them: set `name: muse-esp32boxs3-screen` in the substitutions of your overlay (docs/HOME_OVERLAY.md). Changing the device name changes every action name, and the prompt your assistant keeps has to change with it.
+- Muse Web Screen keeps the device name saved in its settings; only a browser that never saved its settings follows the new default.
 
 ## 4.2.0, 8 October 2026
 

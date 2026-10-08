@@ -31,7 +31,7 @@ import sys
 import urllib.error
 import urllib.request
 
-DEFAULT_DEVICE = "muse_esp32boxs3_screen"
+DEFAULT_DEVICE = "muse_esp32_s3_box_3_screen"
 
 
 def call(device, action, data, response=True):
@@ -55,7 +55,7 @@ def call(device, action, data, response=True):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--device", default=os.environ.get("MUSE_BOX_DEVICE", DEFAULT_DEVICE),
-                    help="the ESPHome device name with underscores (default muse_esp32boxs3_screen)")
+                    help="the ESPHome device name with underscores (default muse_esp32_s3_box_3_screen)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("status", help="status: ready, listening, thinking, speaking, error, off; optional label")
     s.add_argument("status"); s.add_argument("label", nargs="?", default="")

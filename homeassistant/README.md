@@ -1,7 +1,7 @@
 # Home Assistant side
 
 The box is an ESPHome device; Home Assistant discovers it and lists its actions as
-`esphome.<device>_muse_*` (device `muse-esp32boxs3-screen` gives `esphome.muse_esp32boxs3_screen_muse_show_text`).
+`esphome.<device>_muse_*` (device `muse-esp32-s3-box-3-screen` gives `esphome.muse_esp32_s3_box_3_screen_muse_show_text`).
 Every argument is mandatory in Home Assistant, send `""` where nothing is meant.
 
 - `automations/`: four examples to import or copy (doorbell with photo, garage with a

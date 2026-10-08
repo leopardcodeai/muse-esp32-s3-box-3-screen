@@ -1,7 +1,7 @@
 # Actions: what the box can show, hear and answer
 
 Every action is an ESPHome action in Home Assistant, named `esphome.<device>_muse_<action>`
-(device `muse-esp32boxs3-screen` gives `esphome.muse_esp32boxs3_screen_muse_show_text`). Home Assistant makes every
+(device `muse-esp32-s3-box-3-screen` gives `esphome.muse_esp32_s3_box_3_screen_muse_show_text`). Home Assistant makes every
 argument mandatory; send `""` where nothing is meant. `tools/muse_screen.py` wraps all of them.
 
 ## Cards wait in line, touch moves on
@@ -22,7 +22,7 @@ photo follows "Es klingelt" without a tap, and a scene replaces a scene.
 | on a question | the button under the finger answers (yes/no, or one of up to four choices) | |
 | on a scene with `button`s | the button under the finger answers with its text (`muse_wait_answer`) | |
 
-Every answer a touch gives lands in `sensor.muse_esp32boxs3_screen_answer` as
+Every answer a touch gives lands in `sensor.muse_esp32_s3_box_3_screen_answer` as
 `<answer>: <question>` (`none: ...` when a question left the screen unanswered, `<text>:
 Szene` for a scene button).
 ## The actions
@@ -31,28 +31,28 @@ An assistant calls these through Home Assistant with its own long-lived token.
 
 | Home Assistant action | Data | Shows |
 |---|---|---|
-| `esphome.muse_esp32boxs3_screen_muse_set_status` | `status`: `ready`, `listening`, `thinking`, `speaking`, `error`, `off` | the matching animation and pill; `off` dims the display |
-| `esphome.muse_esp32boxs3_screen_muse_set_status_text` | `status` as above, `label`: free text | the same animation, and `label` in the pill instead of its default text |
-| `esphome.muse_esp32boxs3_screen_muse_show_text` | `title`, `message` | Muse (or a weather icon) with title, the text on a card; line breaks stay |
-| `esphome.muse_esp32boxs3_screen_muse_show_weather` | `condition`, `temperature`, `message` | big weather icon, temperature, condition, text below |
-| `esphome.muse_esp32boxs3_screen_muse_show_event` | `icon`, `title`, `message` | a coloured disc with an icon, title and text |
-| `esphome.muse_esp32boxs3_screen_muse_show_image` | `title`, `message`, `url` | a photo or an animated GIF (section "Pictures"), title and text below |
-| `esphome.muse_esp32boxs3_screen_muse_show_live` | `title`, `url`, `seconds` | the picture at `url` again and again for 5 to 120 s: a live camera view |
-| `esphome.muse_esp32boxs3_screen_muse_show_route` | `title`, `from`, `to`, `mode` | a map with the way, start green, destination red, distance and time |
-| `esphome.muse_esp32boxs3_screen_muse_show_agenda` | `title`, `events` | a calendar sheet and the appointments, one per line of `events` |
-| `esphome.muse_esp32boxs3_screen_muse_show_list` | `title`, `items` | a list with ticks, one item per line of `items` |
-| `esphome.muse_esp32boxs3_screen_muse_show_timer` | `label`, `duration` | a timer on the box: ring and time left, the chime when it ends |
-| `esphome.muse_esp32boxs3_screen_muse_cancel_timer` | `label` | ends the box's own timers: all with `label` empty, else those with that name |
-| `esphome.muse_esp32boxs3_screen_muse_ask` | `question`, `yes_label`, `no_label` | a question with two buttons; answers which one was tapped |
-| `esphome.muse_esp32boxs3_screen_muse_choose` | `question`, `options` | a question with two to four answers (`options` one per line); answers the chosen text |
-| `esphome.muse_esp32boxs3_screen_muse_wait_answer` | `seconds` | nothing; waits up to 60 s for the next answer a touch gives (question or scene button) |
-| `esphome.muse_esp32boxs3_screen_muse_clear` | none | every card gone, the line emptied, the status back |
-| `esphome.muse_esp32boxs3_screen_muse_get_state` | none | nothing; answers with what the box shows and knows (mode, title, waiting, last answer, listening, muted, presence, battery, timers, volume) |
-| `esphome.muse_esp32boxs3_screen_muse_show_value` | `label`, `value`, `unit` | a large value, e.g. `21,5` `°C` |
-| `esphome.muse_esp32boxs3_screen_muse_celebrate` | `title`, `message` | confetti once, then the title |
-| `esphome.muse_esp32boxs3_screen_muse_draw` | `scene` | a picture of Muse's own design (section "Scenes"); answers with what went wrong |
-| `esphome.muse_esp32boxs3_screen_muse_hw_check` | none | nothing; answers with every chip, pin and memory reading (section "Hardware") |
-| `media_player.play_media` on `media_player.muse_esp32boxs3_screen_speaker` | a sound or music URL | plays it on the box's speaker (section "Sound") |
+| `esphome.muse_esp32_s3_box_3_screen_muse_set_status` | `status`: `ready`, `listening`, `thinking`, `speaking`, `error`, `off` | the matching animation and pill; `off` dims the display |
+| `esphome.muse_esp32_s3_box_3_screen_muse_set_status_text` | `status` as above, `label`: free text | the same animation, and `label` in the pill instead of its default text |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_text` | `title`, `message` | Muse (or a weather icon) with title, the text on a card; line breaks stay |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_weather` | `condition`, `temperature`, `message` | big weather icon, temperature, condition, text below |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_event` | `icon`, `title`, `message` | a coloured disc with an icon, title and text |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_image` | `title`, `message`, `url` | a photo or an animated GIF (section "Pictures"), title and text below |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_live` | `title`, `url`, `seconds` | the picture at `url` again and again for 5 to 120 s: a live camera view |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_route` | `title`, `from`, `to`, `mode` | a map with the way, start green, destination red, distance and time |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_agenda` | `title`, `events` | a calendar sheet and the appointments, one per line of `events` |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_list` | `title`, `items` | a list with ticks, one item per line of `items` |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_timer` | `label`, `duration` | a timer on the box: ring and time left, the chime when it ends |
+| `esphome.muse_esp32_s3_box_3_screen_muse_cancel_timer` | `label` | ends the box's own timers: all with `label` empty, else those with that name |
+| `esphome.muse_esp32_s3_box_3_screen_muse_ask` | `question`, `yes_label`, `no_label` | a question with two buttons; answers which one was tapped |
+| `esphome.muse_esp32_s3_box_3_screen_muse_choose` | `question`, `options` | a question with two to four answers (`options` one per line); answers the chosen text |
+| `esphome.muse_esp32_s3_box_3_screen_muse_wait_answer` | `seconds` | nothing; waits up to 60 s for the next answer a touch gives (question or scene button) |
+| `esphome.muse_esp32_s3_box_3_screen_muse_clear` | none | every card gone, the line emptied, the status back |
+| `esphome.muse_esp32_s3_box_3_screen_muse_get_state` | none | nothing; answers with what the box shows and knows (mode, title, waiting, last answer, listening, muted, presence, battery, timers, volume) |
+| `esphome.muse_esp32_s3_box_3_screen_muse_show_value` | `label`, `value`, `unit` | a large value, e.g. `21,5` `°C` |
+| `esphome.muse_esp32_s3_box_3_screen_muse_celebrate` | `title`, `message` | confetti once, then the title |
+| `esphome.muse_esp32_s3_box_3_screen_muse_draw` | `scene` | a picture of Muse's own design (section "Scenes"); answers with what went wrong |
+| `esphome.muse_esp32_s3_box_3_screen_muse_hw_check` | none | nothing; answers with every chip, pin and memory reading (section "Hardware") |
+| `media_player.play_media` on `media_player.muse_esp32_s3_box_3_screen_speaker` | a sound or music URL | plays it on the box's speaker (section "Sound") |
 | `script.muse_wetter` | none | the current weather from `weather.forecast_home`, today's low and high, when the rain starts |
 
 - `condition`: Home Assistant's weather states (`sunny`, `partlycloudy`,
@@ -151,7 +151,7 @@ on the box waits for a download any more.
   "Route: ..."), and the log says the same (`muse.media`).
 ## Sound
 
-Since 3.2 the box has a media player, `media_player.muse_esp32boxs3_screen_speaker`
+Since 3.2 the box has a media player, `media_player.muse_esp32_s3_box_3_screen_speaker`
 ("Lautsprecher"): sounds and music from a URL, Home Assistant's TTS, Music Assistant.
 Home Assistant converts what it sends to FLAC, so OGG, MP3 or WAV all play. An
 announcement lays itself over music, which steps back by 20 dB meanwhile. The voice

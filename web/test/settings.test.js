@@ -77,7 +77,7 @@ test("README and the settings dialog name the box as DEFAULT_DEVICE does", () =>
   const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   for (const [name, text] of [["README.md", readme], ["index.html", html]]) {
-    assert.ok(!/muse_box|muse-box\b|esp32boxs3-toy|ESP32BoxS3 Toy/i.test(text), `${name} still names the old box`);
+    assert.ok(!/muse_box|muse-box\b|esp32boxs3|ESP32BoxS3/i.test(text), `${name} still names the old box`);
   }
   assert.ok(readme.includes(`esphome.${DEFAULT_DEVICE}_muse_show_text`), "README shows the action prefix");
   assert.ok(readme.includes(`\`${DEFAULT_DEVICE}\``), "README names the default device");

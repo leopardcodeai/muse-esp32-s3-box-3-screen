@@ -13,7 +13,7 @@ conditions:
   - condition: template
     value_template: "{{ trigger.from_state.state == 'not_home' and (now() - trigger.from_state.last_changed).total_seconds() > 600 }}"
 actions:
-  - action: esphome.muse_esp32boxs3_screen_muse_show_event
+  - action: esphome.muse_esp32_s3_box_3_screen_muse_show_event
     continue_on_error: true
     data:
       icon: zuhause

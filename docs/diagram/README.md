@@ -4,7 +4,7 @@
 what stays in the house. `system.png` is the same picture rendered at 1600 px for places
 that cannot show an SVG.
 
-![System diagram of Muse ESP32BoxS3 Screen](system.svg)
+![System diagram of Muse ESP32-S3-BOX-3 Screen](system.svg)
 
 ## What it shows, left to right
 
@@ -12,7 +12,7 @@ that cannot show an SVG.
 |---|---|
 | Meta datacenter | Muse, the assistant: it reasons, plans and remembers in Meta's cloud. |
 | Muse apps | the Muse app on an iPhone and a MacBook: chat, voice, e-mail, calendar. The app talks only to the cloud. |
-| Home Assistant | the hub, on a Raspberry Pi 5. Muse reaches it through the REST API with a long-lived token and calls the `esphome.muse_esp32boxs3_screen_muse_*` actions (`docs/ACTIONS.md`). Inside: the ESPHome integration, the Assist voice pipeline (speech to text, text to speech) and the automations that turn house events into cards (`homeassistant/`). |
+| Home Assistant | the hub, on a Raspberry Pi 5. Muse reaches it through the REST API with a long-lived token and calls the `esphome.muse_esp32_s3_box_3_screen_muse_*` actions (`docs/ACTIONS.md`). Inside: the ESPHome integration, the Assist voice pipeline (speech to text, text to speech) and the automations that turn house events into cards (`homeassistant/`). |
 | ESP32-S3-BOX-3 | the screen, input and output in one box. Inputs: two microphones with the wake word on the box, touch, radar presence, temperature. Outputs: the display (cards, scenes, routes, GIFs, live camera view), the speaker (voice, chime, music), the backlight. |
 | The house | the Home Assistant devices whose events become cards: doorbell with camera, garage door, shutters, TVs, speakers, calendar, waste schedule. |
 | Open data on the internet | what the box fetches itself: OpenStreetMap routing and map tiles for routes, any picture or GIF on the web, Spotify streams through Music Assistant. Nothing else leaves the house (`docs/PRIVACY.md`). |
